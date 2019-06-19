@@ -1,12 +1,14 @@
 package experiment.os.user;
 
+import experiment.os.properties.GlobalProperties;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserOpenFile implements Serializable {
 
-    transient private static int MAX_OPEN_FILE_COUNT = 10;
+    transient private static int MAX_OPEN_FILE_COUNT = GlobalProperties.getInt("openfile.maxOpenFileCount");
 
     private short mode;
     private short uid;

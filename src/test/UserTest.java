@@ -1,9 +1,11 @@
 package test;
 
+import experiment.os.properties.GlobalProperties;
 import experiment.os.user.User;
 import experiment.os.user.UserManager;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -22,5 +24,11 @@ public class UserTest {
         List<User> registerUsers = UserManager.getRegisterUsers();
         System.out.println(registerUsers);
 
+    }
+
+    @Test
+    public void tt() {
+        int asdf = Integer.valueOf(GlobalProperties.get("file.nameMaxLength"));
+        System.out.println(asdf);
     }
 }

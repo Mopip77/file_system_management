@@ -1,10 +1,11 @@
 package experiment.os.block.base;
 
 import experiment.os.block.base.Block;
+import experiment.os.properties.GlobalProperties;
 
 public class LeaderBlock extends Block {
 
-    int GROUP_SIZE = 50;
+    int GROUP_SIZE = GlobalProperties.getInt("block.groupSize");
 
     private int[] freeBlockStack = new int[GROUP_SIZE + 1];
 

@@ -5,6 +5,7 @@ import experiment.os.block.base.Block;
 import experiment.os.block.DataBlocks;
 import experiment.os.block.base.LeaderBlock;
 import experiment.os.exception.BlockNotEnough;
+import experiment.os.properties.GlobalProperties;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -13,8 +14,8 @@ public class MemSuperBlock {
 
     private SuperBlock diskSuperBlock;
 
-    static int BLOCK_SIZE = SuperBlock.BLOCK_SIZE;
-    static int GROUP_SIZE = SuperBlock.GROUP_SIZE;
+    static int BLOCK_SIZE = GlobalProperties.getInt("block.blockSize");
+    static int GROUP_SIZE = GlobalProperties.getInt("block.groupSize");
 
     private int blockSize;
 

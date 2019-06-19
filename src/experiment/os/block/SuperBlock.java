@@ -1,16 +1,17 @@
 package experiment.os.block;
 
 import experiment.os.block.base.Block;
+import experiment.os.properties.GlobalProperties;
 
 import java.io.*;
 
 public class SuperBlock implements Serializable {
 
-    static String DATA_SAVE_PATH = "super.txt";
+    static String DATA_SAVE_PATH = GlobalProperties.get("savepath.dataBlockPath");
 
     // Initial Constant
-    public static int BLOCK_SIZE = 512;
-    public static int GROUP_SIZE = 50;
+    public static int BLOCK_SIZE = GlobalProperties.getInt("block.blockSize");
+    public static int GROUP_SIZE = GlobalProperties.getInt("block.groupSize");
 
     private int blockSize = BLOCK_SIZE;
 

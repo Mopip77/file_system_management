@@ -1,7 +1,9 @@
 package experiment.os.block.base;
 
+import experiment.os.properties.GlobalProperties;
+
 public class DirectoryItem {
-    private char[] dName = new char[14];
+    private char[] dName = new char[GlobalProperties.getInt("file.nameMaxLength")];
     private int dIno;
 
     public DirectoryItem() {

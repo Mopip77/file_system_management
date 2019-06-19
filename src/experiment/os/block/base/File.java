@@ -1,7 +1,9 @@
 package experiment.os.block.base;
 
+import experiment.os.properties.GlobalProperties;
+
 public class File extends Block {
-    private char[] data = new char[510];
+    private char[] data = new char[GlobalProperties.getInt("block.blockSize") - 2];
     private File nextFile;
 
     public File() {

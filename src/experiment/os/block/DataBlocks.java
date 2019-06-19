@@ -1,10 +1,11 @@
 package experiment.os.block;
 
 import experiment.os.block.base.Block;
+import experiment.os.properties.GlobalProperties;
 
 public class DataBlocks {
 
-    static int BLOCK_SIZE = 512;
+    static int BLOCK_SIZE = GlobalProperties.getInt("block.blockSize");
 
     private static Block[] dataBlocks = new Block[BLOCK_SIZE];
 

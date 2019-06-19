@@ -1,6 +1,7 @@
 package experiment.os.user;
 
-import experiment.os.authority.FileAuthroity;
+import experiment.os.authority.FileAuthroityType;
+import experiment.os.properties.GlobalProperties;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ import java.util.Scanner;
 public class UserManager implements Serializable {
 
     private static Scanner scanner = new Scanner(System.in);
-    private static String USER_DATA_PATH = "user.txt";
+    private static String USER_DATA_PATH = GlobalProperties.get("savepath.userDataPath");
     private static short currentUid = 0;
     private static short currentGid = 0;
 
@@ -70,7 +71,7 @@ public class UserManager implements Serializable {
         short mode = scanner.nextShort();
         // check mode range
         if (!(mode >= 0 && mode <= 7)) {
-            mode = (short) (FileAuthroity.Read.getMode() | FileAuthroity.Write.getMode());
+            mode = (short) (FileAuthroityType.Read.getMode() | FileAuthroityType.Write.getMode());
         }
 
         User u = new User(name, password, currentUid++, currentGid++, mode);
