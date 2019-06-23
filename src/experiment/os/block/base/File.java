@@ -14,6 +14,11 @@ public class File extends Block {
         this.nextFile = nextFile;
     }
 
+    @Override
+    protected File clone() throws CloneNotSupportedException {
+        return (File) super.clone();
+    }
+
     public char[] getData() {
         return data;
     }

@@ -7,7 +7,7 @@ import java.io.*;
 
 public class SuperBlock implements Serializable {
 
-    static String DATA_SAVE_PATH = GlobalProperties.get("savepath.dataBlockPath");
+    static String DATA_SAVE_PATH = GlobalProperties.get("savePath.dataBlockPath");
 
     // Initial Constant
     public static int BLOCK_SIZE = GlobalProperties.getInt("block.blockSize");

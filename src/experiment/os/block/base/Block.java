@@ -1,5 +1,5 @@
 package experiment.os.block.base;
 
-public abstract class Block {
+import java.io.Serializable;
 
-}
+public abstract class Block implements Serializable { }

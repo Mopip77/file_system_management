@@ -11,7 +11,7 @@ import java.util.Scanner;
 public class UserManager implements Serializable {
 
     private static Scanner scanner = new Scanner(System.in);
-    private static String USER_DATA_PATH = GlobalProperties.get("savepath.userDataPath");
+    private static String USER_DATA_PATH = GlobalProperties.get("savePath.userDataPath");
     private static short currentUid = 0;
     private static short currentGid = 0;
 
