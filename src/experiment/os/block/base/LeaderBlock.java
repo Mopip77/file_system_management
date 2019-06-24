@@ -1,9 +1,8 @@
 package experiment.os.block.base;
 
-import experiment.os.block.base.Block;
 import experiment.os.properties.GlobalProperties;
 
-public class LeaderBlock extends Block {
+public class LeaderBlock implements Block {
 
     int GROUP_SIZE = GlobalProperties.getInt("block.groupSize");
 

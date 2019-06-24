@@ -2,7 +2,7 @@ package experiment.os.block.base;
 
 import experiment.os.properties.GlobalProperties;
 
-public class Directory extends Block {
+public class Directory implements Block {
     private DirectoryItem[] directoryItems = new DirectoryItem[GlobalProperties.getInt("directory.maxItemPerDirectory")];
     private int size;
 

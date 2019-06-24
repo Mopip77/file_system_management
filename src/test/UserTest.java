@@ -5,9 +5,7 @@ import experiment.os.user.User;
 import experiment.os.user.UserManager;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 public class UserTest {
 

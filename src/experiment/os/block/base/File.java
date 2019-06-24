@@ -2,21 +2,16 @@ package experiment.os.block.base;
 
 import experiment.os.properties.GlobalProperties;
 
-public class File extends Block {
-    private char[] data = new char[GlobalProperties.getInt("block.blockSize") - 2];
-    private File nextFile;
+public class File implements Block {
+    static int FILE_TEXT_MAX_LENGTH = GlobalProperties.getInt("block.blockSize") - 2;
 
-    public File() {
-    }
+    private char[] data = new char[FILE_TEXT_MAX_LENGTH];
+    private int nextFileIndex;
 
-    public File(char[] data, File nextFile) {
-        this.data = data;
-        this.nextFile = nextFile;
-    }
-
-    @Override
-    protected File clone() throws CloneNotSupportedException {
-        return (File) super.clone();
+    public File(char[] data, int nextFileIndex) {
+        int textLen = data.length > FILE_TEXT_MAX_LENGTH ? FILE_TEXT_MAX_LENGTH : data.length;
+        System.arraycopy(data, 0, this.data, 0, textLen);
+        this.nextFileIndex = nextFileIndex;
     }
 
     public char[] getData() {
@@ -27,11 +22,11 @@ public class File extends Block {
         this.data = data;
     }
 
-    public File getNextFile() {
-        return nextFile;
+    public int getNextFileIndex() {
+        return nextFileIndex;
     }
 
-    public void setNextFile(File nextFile) {
-        this.nextFile = nextFile;
+    public void setNextFileIndex(int nextFileIndex) {
+        this.nextFileIndex = nextFileIndex;
     }
 }

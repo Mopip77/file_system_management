@@ -51,7 +51,7 @@ public class DirectoryExecutor implements Executor {
      * @param targetPath
      * @return
      */
-    private List<String[]> filterAcientPath(List<String[]> checkPaths, String[] targetPath) {
+    private List<String[]> filterAncestorPath(List<String[]> checkPaths, String[] targetPath) {
         List<String[]> result = new ArrayList<>();
         for (String[] checkPath : checkPaths) {
             boolean isAncient = true;
@@ -125,7 +125,7 @@ public class DirectoryExecutor implements Executor {
 
         List<String[]> createPaths = getCombinationPaths(args, currentPath);
         // 过滤祖先文件夹
-        List<String[]> filterPaths = filterAcientPath(createPaths, currentPath);
+        List<String[]> filterPaths = filterAncestorPath(createPaths, currentPath);
 
         // TODO rm path function
     }
@@ -145,7 +145,7 @@ public class DirectoryExecutor implements Executor {
             return;
         }
 
-        List<String[]> filterPaths = filterAcientPath(createPaths, targetPath);
+        List<String[]> filterPaths = filterAncestorPath(createPaths, targetPath);
 
         // TODO mv path function
     }

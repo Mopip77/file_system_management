@@ -8,16 +8,16 @@ public class User implements Serializable{
     private String password;
     private short uid;
     private short gid;
-    private short mode;
+    private short defaultMode;
     private UserOpenFile userOpenFile;
 
-    public User(String name, String password, short uid, short gid, short mode) {
+    public User(String name, String password, short uid, short gid, short defaultMode) {
         this.name = name;
         this.password = password;
         this.uid = uid;
         this.gid = gid;
-        this.mode = mode;
-        userOpenFile = new UserOpenFile(mode, uid, gid);
+        this.defaultMode = defaultMode;
+        userOpenFile = new UserOpenFile(defaultMode, uid, gid);
     }
 
     public String getName() {
@@ -60,11 +60,11 @@ public class User implements Serializable{
         this.userOpenFile = userOpenFile;
     }
 
-    public short getMode() {
-        return mode;
+    public short getDefaultMode() {
+        return defaultMode;
     }
 
-    public void setMode(short mode) {
-        this.mode = mode;
+    public void setDefaultMode(short defaultMode) {
+        this.defaultMode = defaultMode;
     }
 }

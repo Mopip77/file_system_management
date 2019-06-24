@@ -34,16 +34,37 @@ public class BlockBuffer {
     private int MAX_SIZE = GlobalProperties.getInt("blockBuffer.maxSize");
 
     // <diskIndex, BlockItem>
-    private Map<Integer, BlockBufferItem> blockBuffer = new LinkedHashMap<>(MAX_SIZE);
+    private Map<Integer, BlockBufferItem> blockBuffer = new LinkedHashMap<>(MAX_SIZE, 0.75f, true);
     private int size = 0;
+
+    private static BlockBuffer blockBufferInstance = null;
+
+    private BlockBuffer() {}
+
+    public static BlockBuffer getInstance() {
+        if (blockBufferInstance == null) {
+            blockBufferInstance = new BlockBuffer();
+        }
+        return blockBufferInstance;
+    }
 
     public Block get(int diskIndex) {
         if (blockBuffer.get(diskIndex) == null) {
             loadDiskBlock(diskIndex);
-        }else {
-            updateBlockBufferItem(diskIndex);
         }
         return blockBuffer.get(diskIndex).getBlock();
+    }
+
+    public void set(int diskIndex, Block block) {
+        if (blockBuffer.containsKey(diskIndex)) {
+            size--;
+        } else if (size == MAX_SIZE) {
+            writeFirstBlockBack();
+        }
+        BlockBufferItem blockBufferItem = new BlockBufferItem(block);
+        blockBufferItem.setModified(true);
+        blockBuffer.put(diskIndex, blockBufferItem);
+        size++;
     }
 
     public void clear() {
@@ -67,26 +88,20 @@ public class BlockBuffer {
     private void loadDiskBlock(int diskIndex) {
         if (size == MAX_SIZE) {
             writeFirstBlockBack();
-            size--;
         }
-        blockBuffer.put(diskIndex, new BlockBufferItem(DataBlocks.get(diskIndex)));
+        Block diskBlock = DataBlocks.getInstance().get(diskIndex);
+        // 从硬盘读入内存 需要copy一份
+        blockBuffer.put(diskIndex, new BlockBufferItem(SerializationUtils.clone(diskBlock)));
         size++;
     }
 
     private void writeFirstBlockBack() {
+        size--;
         Integer saveBackBlockIndex = (Integer) blockBuffer.keySet().toArray()[0];
         BlockBufferItem saveBackBlock = blockBuffer.remove(saveBackBlockIndex);
         if (saveBackBlock.isModified()) {
             // write back
-            DataBlocks.set(saveBackBlockIndex, SerializationUtils.clone(saveBackBlock.getBlock()));
+            DataBlocks.getInstance().set(saveBackBlockIndex, saveBackBlock.getBlock());
         }
-    }
-
-    /**
-     * update used buffer item prioity
-     */
-    private void updateBlockBufferItem(int index) {
-        BlockBufferItem blockBufferItem = blockBuffer.get(index);
-        blockBuffer.put(index, blockBufferItem);
     }
 }

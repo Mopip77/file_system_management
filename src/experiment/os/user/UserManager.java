@@ -1,6 +1,6 @@
 package experiment.os.user;
 
-import experiment.os.authority.FileAuthroityType;
+import experiment.os.authority.AuthroityType;
 import experiment.os.properties.GlobalProperties;
 
 import java.io.*;
@@ -71,7 +71,7 @@ public class UserManager implements Serializable {
         short mode = scanner.nextShort();
         // check mode range
         if (!(mode >= 0 && mode <= 7)) {
-            mode = (short) (FileAuthroityType.Read.getMode() | FileAuthroityType.Write.getMode());
+            mode = (short) (AuthroityType.READ.getMode() | AuthroityType.WRITE.getMode());
         }
 
         User u = new User(name, password, currentUid++, currentGid++, mode);
