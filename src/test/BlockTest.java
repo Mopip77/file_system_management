@@ -23,13 +23,13 @@ public class BlockTest {
 
     @Test
     public void testLoad() {
-        MemSuperBlock memSuperBlock = new MemSuperBlock();
+//        MemSuperBlock memSuperBlock = new MemSuperBlock();
         System.out.println(1);
     }
 
     @Test
     public void testSave() {
-        MemSuperBlock memSuperBlock = new MemSuperBlock();
+        MemSuperBlock memSuperBlock = MemSuperBlock.getInstance();
         try {
             memSuperBlock.dispaterBlock(20);
         } catch (BlockNotEnough blockNotEnough) {

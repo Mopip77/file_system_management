@@ -8,7 +8,8 @@ public class User implements Serializable{
     private String password;
     private short uid;
     private short gid;
-    private short defaultMode;
+    private short defaultFileMode = 664;
+    private short defaultFolderMode = 775;
     private UserOpenFile userOpenFile;
 
     public User(String name, String password, short uid, short gid, short defaultMode) {

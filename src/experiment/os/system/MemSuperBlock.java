@@ -1,10 +1,13 @@
 package experiment.os.system;
 
+import experiment.os.block.DataBlocks;
 import experiment.os.block.SuperBlock;
 import experiment.os.block.base.Block;
+import experiment.os.block.base.File;
 import experiment.os.block.base.LeaderBlock;
 import experiment.os.exception.BlockNotEnough;
 
+import java.sql.DatabaseMetaData;
 import java.util.Arrays;
 
 public class MemSuperBlock {
@@ -20,16 +23,25 @@ public class MemSuperBlock {
 
     boolean modified = false;
 
+    private static MemSuperBlock memSuperBlock;
+
     /**
-     * 传入disk的Super block, 如果没有配置文件或读取失败则format
+     * 如果没有配置文件或读取失败则format
      */
-    public MemSuperBlock() {
+    private MemSuperBlock() {
         diskSuperBlock = SuperBlock.getInstance();
         blockSize = SuperBlock.BLOCK_SIZE;
         groupSize = SuperBlock.GROUP_SIZE;
         freeBlockSize = diskSuperBlock.getFreeBlockSize();
         freeBlock = diskSuperBlock.getFreeBlock();
         freeBlockStack = Arrays.copyOf(diskSuperBlock.getFreeBlockStack(), diskSuperBlock.getFreeBlockStack().length);
+    }
+
+    public static MemSuperBlock getInstance() {
+        if (memSuperBlock == null) {
+            memSuperBlock = new MemSuperBlock();
+        }
+        return memSuperBlock;
     }
 
     /**
@@ -120,5 +132,14 @@ public class MemSuperBlock {
             diskSuperBlock.setFreeBlockStack(freeBlockStack);
             diskSuperBlock.save();
         }
+    }
+
+    public void test1() {
+        DataBlocks.getInstance().set(10, new File("asdf".toCharArray(), -1));
+    }
+
+    public void test2() {
+        File block = (File) DataBlocks.getInstance().get(10);
+        System.out.println(block.getData());
     }
 }

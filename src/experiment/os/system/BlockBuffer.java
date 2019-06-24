@@ -74,6 +74,13 @@ public class BlockBuffer {
         size = 0;
     }
 
+    public void save() {
+        for (int i = 0; i < size; i++) {
+            writeFirstBlockBack();
+        }
+        DataBlocks.getInstance().save();
+    }
+
     public void setBlockModified(int diskIndex) {
         BlockBufferItem blockBufferItem = blockBuffer.get(diskIndex);
         if (blockBufferItem != null) {

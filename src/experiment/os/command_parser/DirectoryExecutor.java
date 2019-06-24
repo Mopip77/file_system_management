@@ -1,7 +1,12 @@
 package experiment.os.command_parser;
 
+import experiment.os.authority.AuthorityType;
+import experiment.os.block.base.Block;
+import experiment.os.block.base.INode;
 import experiment.os.exception.FileOrDirectoryAlreadyExists;
 import experiment.os.exception.NoSuchFileOrDirectory;
+import experiment.os.exception.PermisionException;
+import experiment.os.system.BlockBuffer;
 import experiment.os.user.User;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -87,7 +92,7 @@ public class DirectoryExecutor implements Executor {
         // TODO cd path function
     }
 
-    private void ls(String[] args, String[] currentPath, User excutor) {
+    private void ls(String[] args, String[] currentPath, User excutor) throws PermisionException {
         // 只取第一个, 如果一个也没有则为当前目录
         String[] resultPath;
         if (args.length == 0) {
@@ -102,6 +107,23 @@ public class DirectoryExecutor implements Executor {
         }
 
         // TODO ls path function
+        // 层次的鉴权
+        for (int i = 0; i < resultPath.length - 1; i++) {
+
+
+
+            boolean hasAuthority = AuthorityType.hasAuthority(excutor.getUid(), excutor.getGid(), iNode.getUserId(), iNode.getGroupId(), iNode.getAccess(), AuthorityType.EXCUTE);
+            if (!hasAuthority) {
+                throw new PermisionException("ls");
+            }
+        }
+
+        boolean hasAuthority = AuthorityType.hasAuthority(excutor.getUid(), excutor.getGid(), iNode.getUserId(), iNode.getGroupId(), iNode.getAccess(), AuthorityType.READ);
+        if (!hasAuthority) {
+            throw new PermisionException("ls");
+        }
+
+
     }
 
     private void mkdir(String[] args, String[] currentPath, User excutor) {
