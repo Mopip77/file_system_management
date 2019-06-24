@@ -1,39 +1,31 @@
 package experiment.os.block.base;
 
-public class INode{//内存i节点
-    private int iFlag;//iNode编号
+import experiment.os.myEnum.FileType;
+
+public class DiskINode {
     private int quoteNum;//引用计数
-    private short access;//存取权限
+    private short mode;//存取权限
     private short firstBlock;
     private short lastBlock;
     private long size;//文件大小
     private int fileType;//文件类型,文件或文件夹
     private short userId;
     private short groupId;//可以按组设置权限
-    private long createTime;//文件最近修改时间
+    private long createTime;//文件创建信息
     private long modifyTime;//文件最近修改时间
 
-    public INode(int iFlag, short access, short firstBlock, short lastBlock, long size, int fileType, short userId, short groupId) {
-        this.iFlag = iFlag;
-        this.access = access;
+    public DiskINode(short mode, short firstBlock, FileType fileType, short userId, short groupId) {
+        this.mode = mode;
         this.firstBlock = firstBlock;
-        this.lastBlock = lastBlock;
-        this.size = size;
-        this.fileType = fileType;
+        this.fileType = fileType.getType();
         this.userId = userId;
         this.groupId = groupId;
 
         quoteNum = 1;
+        lastBlock = firstBlock;
+        size = 0;
         createTime = System.currentTimeMillis();
         modifyTime = createTime;
-    }
-
-    public int getiFlag() {
-        return iFlag;
-    }
-
-    public void setiFlag(int iFlag) {
-        this.iFlag = iFlag;
     }
 
     public int getQuoteNum() {
@@ -44,12 +36,12 @@ public class INode{//内存i节点
         this.quoteNum = quoteNum;
     }
 
-    public short getAccess() {
-        return access;
+    public short getMode() {
+        return mode;
     }
 
-    public void setAccess(short access) {
-        this.access = access;
+    public void setMode(short mode) {
+        this.mode = mode;
     }
 
     public short getFirstBlock() {

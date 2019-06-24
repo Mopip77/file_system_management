@@ -1,4 +1,4 @@
-package experiment.os.authority;
+package experiment.os.myEnum;
 
 public enum AuthorityType {
     READ(256),

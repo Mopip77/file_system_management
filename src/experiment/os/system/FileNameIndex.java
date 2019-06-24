@@ -1,13 +1,11 @@
 package experiment.os.system;
 
-import experiment.os.block.base.Block;
 import experiment.os.block.base.Directory;
-import experiment.os.block.base.INode;
+import experiment.os.block.base.DiskINode;
 import experiment.os.exception.NoSuchFileOrDirectory;
+import experiment.os.myEnum.FileType;
 import experiment.os.properties.GlobalProperties;
 
-import javax.swing.*;
-import java.io.FilenameFilter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,10 +52,11 @@ public class FileNameIndex {
                 continue;
             }
             // 加载上一级目录
-            INode parentInode;
+            DiskINode parentInode;
             Directory parentDirectory;
 
-            parentInode = BFD.getInstace().get(parentInodeIdx);
+            parentInode = BFD.getInstance().get(parentInodeIdx);
+            if (parentInode.getFileType() != FileType.DIRECTORY.getType()) throw new NoSuchFileOrDirectory("FileNameIndex 66");
             parentDirectory = (Directory) BlockBuffer.getInstance().get(parentInode.getFirstBlock());
             int idx = parentDirectory.find(absentPath[i]);
             if (idx == -1) {

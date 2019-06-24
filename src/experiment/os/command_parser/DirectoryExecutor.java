@@ -1,11 +1,14 @@
 package experiment.os.command_parser;
 
-import experiment.os.authority.AuthorityType;
 import experiment.os.block.base.Block;
-import experiment.os.block.base.INode;
+import experiment.os.block.base.Directory;
+import experiment.os.block.base.DiskINode;
+import experiment.os.myEnum.AuthorityType;
 import experiment.os.exception.FileOrDirectoryAlreadyExists;
 import experiment.os.exception.NoSuchFileOrDirectory;
 import experiment.os.exception.PermisionException;
+import experiment.os.myEnum.FileType;
+import experiment.os.system.BFD;
 import experiment.os.system.BlockBuffer;
 import experiment.os.user.User;
 import org.apache.commons.lang3.ArrayUtils;
@@ -13,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class DirectoryExecutor implements Executor {
     // cd xxx
@@ -22,6 +26,8 @@ public class DirectoryExecutor implements Executor {
     // mv xxx xxx
     // cp xxx xxx
     // ln [-s] xxx xxx
+
+    private BFD bfd = BFD.getInstance();
 
     @Override
     public void excute(String command, String[] args, String[] currentPath, User excutor) {
@@ -93,37 +99,42 @@ public class DirectoryExecutor implements Executor {
     }
 
     private void ls(String[] args, String[] currentPath, User excutor) throws PermisionException {
-        // 只取第一个, 如果一个也没有则为当前目录
-        String[] resultPath;
-        if (args.length == 0) {
-            resultPath = currentPath;
-        } else {
-            try {
+        String[] resultPath = null;
+        try {
+            // 只取第一个, 如果一个也没有则为当前目录
+            if (args.length == 0) {
+                resultPath = currentPath;
+            } else {
                 resultPath = getCombinationPath(args[0], currentPath);
-            } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
-                System.out.println(noSuchFileOrDirectory);
-                return;
             }
-        }
 
-        // TODO ls path function
-        // 层次的鉴权
-        for (int i = 0; i < resultPath.length - 1; i++) {
+            // getIndex inode index
+            Integer[] eachFolderINodeIndex;
+            eachFolderINodeIndex = bfd.getEachIndex(resultPath);
 
+            // 层次的鉴权
+            boolean flag = true;
+            flag &= bfd.hasAuthority(ArrayUtils.subarray(eachFolderINodeIndex, 0, eachFolderINodeIndex.length - 1), excutor, AuthorityType.EXCUTE);
+            if (flag) {
+                if ((bfd.get(eachFolderINodeIndex[-1]).getFileType() & FileType.DIRECTORY.getType()) == 0 ||
+                        ! bfd.hasAuthority(new Integer[] {eachFolderINodeIndex[-1]}, excutor, AuthorityType.READ)) {
+                    throw new NoSuchFileOrDirectory(resultPath.toString());
+                }
 
+                // print folder in path
+                DiskINode diskINode = bfd.get(eachFolderINodeIndex[-1]);
+                Directory directory = (Directory) BlockBuffer.getInstance().get(diskINode.getFileType());
 
-            boolean hasAuthority = AuthorityType.hasAuthority(excutor.getUid(), excutor.getGid(), iNode.getUserId(), iNode.getGroupId(), iNode.getAccess(), AuthorityType.EXCUTE);
-            if (!hasAuthority) {
-                throw new PermisionException("ls");
+                Stream.of(directory.getDirectoryItems())
+                        .map(item -> item.getdName() + "\t")
+                        .forEach(System.out::print);
+            } else {
+                throw new NoSuchFileOrDirectory(resultPath.toString());
             }
+
+        } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
+            System.out.println(new NoSuchFileOrDirectory(resultPath.toString()));
         }
-
-        boolean hasAuthority = AuthorityType.hasAuthority(excutor.getUid(), excutor.getGid(), iNode.getUserId(), iNode.getGroupId(), iNode.getAccess(), AuthorityType.READ);
-        if (!hasAuthority) {
-            throw new PermisionException("ls");
-        }
-
-
     }
 
     private void mkdir(String[] args, String[] currentPath, User excutor) {

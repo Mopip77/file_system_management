@@ -1,6 +1,6 @@
 package experiment.os.user;
 
-import experiment.os.authority.AuthorityType;
+import experiment.os.myEnum.AuthorityType;
 import experiment.os.properties.GlobalProperties;
 
 import java.io.*;

@@ -12,13 +12,14 @@ public class User implements Serializable{
     private short defaultFolderMode = 775;
     private UserOpenFile userOpenFile;
 
-    public User(String name, String password, short uid, short gid, short defaultMode) {
+    public User(String name, String password, short uid, short gid, short defaultFileMode, short defaultFolderMode) {
         this.name = name;
         this.password = password;
         this.uid = uid;
         this.gid = gid;
-        this.defaultMode = defaultMode;
-        userOpenFile = new UserOpenFile(defaultMode, uid, gid);
+        this.defaultFileMode = defaultFileMode;
+        this.defaultFolderMode = defaultFolderMode;
+//        userOpenFile = new UserOpenFile(defaultMode, uid, gid);
     }
 
     public String getName() {
@@ -61,11 +62,19 @@ public class User implements Serializable{
         this.userOpenFile = userOpenFile;
     }
 
-    public short getDefaultMode() {
-        return defaultMode;
+    public short getDefaultFileMode() {
+        return defaultFileMode;
     }
 
-    public void setDefaultMode(short defaultMode) {
-        this.defaultMode = defaultMode;
+    public void setDefaultFileMode(short defaultFileMode) {
+        this.defaultFileMode = defaultFileMode;
+    }
+
+    public short getDefaultFolderMode() {
+        return defaultFolderMode;
+    }
+
+    public void setDefaultFolderMode(short defaultFolderMode) {
+        this.defaultFolderMode = defaultFolderMode;
     }
 }

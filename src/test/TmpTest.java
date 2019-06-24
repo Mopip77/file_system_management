@@ -21,7 +21,7 @@ public class TmpTest {
     public void save() throws BlockNotEnough {
         // load memory super block
         MemSuperBlock memSuperBlock = MemSuperBlock.getInstance();
-//        File block = (File) BlockBuffer.get(10);
+//        File block = (File) BlockBuffer.getIndex(10);
 //        System.out.println(1);
         int[] blocks = memSuperBlock.dispaterBlock(14);
         for (int idx : blocks) {
@@ -78,11 +78,11 @@ public class TmpTest {
         MemSuperBlock.getInstance().test1();
         MemSuperBlock.getInstance().test2();
 //        System.out.println(DataBlocks.getInstance().hashCode());
-//        File block = (File) DataBlocks.getInstance().get(10);
+//        File block = (File) DataBlocks.getInstance().getIndex(10);
 //        System.out.println(new String(block.getData(), 0, block.getData().length));
 //        DataBlocks.getInstance().set(10, new File("change".toCharArray(), -1));
 //
-//        block = (File) DataBlocks.getInstance().get(10);
+//        block = (File) DataBlocks.getInstance().getIndex(10);
 //        System.out.println(new String(block.getData(), 0, block.getData().length));
 //
         Scanner scanner = new Scanner(System.in);
