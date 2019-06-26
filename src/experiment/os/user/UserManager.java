@@ -10,14 +10,15 @@ import java.util.Scanner;
 
 public class UserManager implements Serializable {
 
-    private static Scanner scanner = new Scanner(System.in);
+//    private static Scanner scanner = new Scanner(System.in);
     private static String USER_DATA_PATH = GlobalProperties.get("savePath.userDataPath");
     private static short currentUid = 0;
     private static short currentGid = 0;
 
     private static List<User> registerUsers = new ArrayList<>();
 
-    private UserManager() { }
+    private UserManager() {
+    }
 
     static {
         ObjectInputStream ois = null;
@@ -39,43 +40,52 @@ public class UserManager implements Serializable {
         }
     }
 
-    public static User login() {
-        System.out.println("[Login]");
-        System.out.print("name: ");
-        String name = scanner.next();
-        System.out.print("password: ");
-        String password = scanner.next();
-
-        User user = null;
-
-        for (User registerUser : registerUsers) {
-            if (registerUser.getName().equals(name) && registerUser.getPassword().equals(password)) {
-                user = registerUser;
-                break;
-            }
+    public static User login(String name, String pwd) {
+//        System.out.println("[Login]");
+//        System.out.print("name: ");
+//        String name = scanner.next();
+//        System.out.print("password: ");
+//        String password = scanner.next();
+//
+//        User user = null;
+//
+//        for (User registerUser : registerUsers) {
+//            if (registerUser.getName().equals(name) && registerUser.getPassword().equals(password)) {
+//                user = registerUser;
+//                break;
+//            }
+//        }
+        User loginUser = findByName(name);
+        if (loginUser.getPassword().equals(pwd)) {
+            return loginUser;
         }
-        return user;
+        return null;
     }
 
-    public static void register() {
-        System.out.println("[Register]");
-        String name = null;
-        do {
-            System.out.print("name: ");
-            name = scanner.next();
-        } while (findByName(name) != null);
+    public static User register(String name, String password) {
+//        System.out.println("[Register]");
+//        String name = null;
+//        do {
+//            System.out.print("name: ");
+//            name = scanner.next();
+//        } while (findByName(name) != null);
+//
+//        System.out.print("password: ");
+//        String password = scanner.next();
+//        System.out.println("file_mode[0-7, 8 -> default]: ");
+//        short mode = scanner.nextShort();
+//        // check mode range
+//        if (!(mode >= 0 && mode <= 7)) {
+//            mode = (short) (AuthorityType.READ.getMode() | AuthorityType.WRITE.getMode());
+//        }
 
-        System.out.print("password: ");
-        String password = scanner.next();
-        System.out.println("file_mode[0-7, 8 -> default]: ");
-        short mode = scanner.nextShort();
-        // check mode range
-        if (!(mode >= 0 && mode <= 7)) {
-            mode = (short) (AuthorityType.READ.getMode() | AuthorityType.WRITE.getMode());
+        if (findByName(name) != null) {
+            return null;
         }
-
-        User u = new User(name, password, currentUid++, currentGid++, mode);
+        User u = new User(name, password, currentUid++, currentGid++, AuthorityType.FILE_DEFAULT_AUTHORITY.getMode(),
+                AuthorityType.DIRECTORY_DEFAULT_AUTHORITY.getMode());
         registerUsers.add(u);
+        return u;
     }
 
     private static User findByName(String name) {
@@ -107,7 +117,6 @@ public class UserManager implements Serializable {
                 }
             }
         }
-
     }
 
     public static short getCurrentUid() {

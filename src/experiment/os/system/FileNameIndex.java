@@ -56,6 +56,7 @@ public class FileNameIndex {
             Directory parentDirectory;
 
             parentInode = BFD.getInstance().get(parentInodeIdx);
+            // 途径的path必须是folder
             if (parentInode.getFileType() != FileType.DIRECTORY.getType()) throw new NoSuchFileOrDirectory("FileNameIndex 66");
             parentDirectory = (Directory) BlockBuffer.getInstance().get(parentInode.getFirstBlock());
             int idx = parentDirectory.find(absentPath[i]);

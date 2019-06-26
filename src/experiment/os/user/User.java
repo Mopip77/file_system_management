@@ -22,6 +22,10 @@ public class User implements Serializable{
 //        userOpenFile = new UserOpenFile(defaultMode, uid, gid);
     }
 
+    public void logout() {
+        // 关闭所有userOpenFile的item
+    }
+
     public String getName() {
         return name;
     }

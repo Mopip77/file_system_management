@@ -20,11 +20,11 @@ public class CommandParser {
     // write xxx
     // logout
 
-    private Executor directoryExcutor = new DirectoryExecutor();
-    private Executor fileExcutor = new FileExecutor();
+    private static Executor directoryExcutor = new DirectoryExecutor();
+    private static Executor fileExcutor = new FileExecutor();
 
 
-    public void parse(String queryCommand, String[] currentPath, User excutor) throws Exception {
+    public static String parse(String queryCommand, String[] currentPath, User excutor) throws Exception {
         String command;
         String[] args;
         if (StringUtils.isBlank(queryCommand)) {
@@ -41,15 +41,14 @@ public class CommandParser {
             case "mv":
             case "cp":
             case "ln":
-                directoryExcutor.excute(command, args, currentPath, excutor);
-                break;
+                return directoryExcutor.excute(command, args, currentPath, excutor);
             case "open":
             case "close":
             case "read":
             case "write":
-                fileExcutor.excute(command, args, currentPath, excutor);
-
-
+                return fileExcutor.excute(command, args, currentPath, excutor);
+            default:
+                return "";
         }
     }
 }

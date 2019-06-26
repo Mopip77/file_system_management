@@ -30,34 +30,36 @@ public class DirectoryExecutor implements Executor {
     private BFD bfd = BFD.getInstance();
 
     @Override
-    public void excute(String command, String[] args, String[] currentPath, User excutor) {
+    public String excute(String command, String[] args, String[] currentPath, User excutor) {
         switch (command) {
             case "cd":
-                cd(args, currentPath, excutor);
-                break;
+                return cd(args, currentPath, excutor);
+
             case "ls":
-                ls(args, currentPath, excutor);
-                break;
+                return ls(args, currentPath, excutor);
+
             case "mkdir":
-                mkdir(args, currentPath, excutor);
-                break;
+                return mkdir(args, currentPath, excutor);
+
             case "rm":
-                rm(args, currentPath, excutor);
-                break;
+                return rm(args, currentPath, excutor);
+
             case "mv":
-                mv(args, currentPath, excutor);
-                break;
+                return mv(args, currentPath, excutor);
+
             case "cp":
-                cp(args, currentPath, excutor);
-                break;
+                return cp(args, currentPath, excutor);
+
             case "ln":
-                ln(args, currentPath, excutor);
-                break;
+                return ln(args, currentPath, excutor);
+
         }
+        return "";
     }
 
     /**
      * 过滤checkPath 中 为 targetPath 祖先目录的项
+     *
      * @param checkPaths
      * @param targetPath
      * @return
@@ -72,7 +74,7 @@ public class DirectoryExecutor implements Executor {
                     break;
                 }
             }
-            if (isAncient){
+            if (isAncient) {
                 System.out.println("there is illegal command: " + StringUtils.join(checkPath, "/") + " -> " + StringUtils.join(targetPath, "/"));
             } else {
                 result.add(checkPath);
@@ -81,24 +83,25 @@ public class DirectoryExecutor implements Executor {
         return result;
     }
 
-    private void cd(String[] args, String[] currentPath, User excutor) {
+    private String cd(String[] args, String[] currentPath, User excutor) {
         // 只取第一个, 如果一个也没有则跳转家目录
         String[] resultPath;
         if (args.length == 0) {
-            resultPath = new String[] {excutor.getName()};
+            resultPath = new String[]{excutor.getName()};
         } else {
             try {
                 resultPath = getCombinationPath(args[0], currentPath);
             } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
                 System.out.println(noSuchFileOrDirectory);
-                return;
+                return "";
             }
         }
 
         // TODO cd path function
+        return "";
     }
 
-    private void ls(String[] args, String[] currentPath, User excutor) throws PermisionException {
+    private String ls(String[] args, String[] currentPath, User excutor) {
         String[] resultPath = null;
         try {
             // 只取第一个, 如果一个也没有则为当前目录
@@ -117,7 +120,7 @@ public class DirectoryExecutor implements Executor {
             flag &= bfd.hasAuthority(ArrayUtils.subarray(eachFolderINodeIndex, 0, eachFolderINodeIndex.length - 1), excutor, AuthorityType.EXCUTE);
             if (flag) {
                 if ((bfd.get(eachFolderINodeIndex[-1]).getFileType() & FileType.DIRECTORY.getType()) == 0 ||
-                        ! bfd.hasAuthority(new Integer[] {eachFolderINodeIndex[-1]}, excutor, AuthorityType.READ)) {
+                        !bfd.hasAuthority(new Integer[]{eachFolderINodeIndex[-1]}, excutor, AuthorityType.READ)) {
                     throw new NoSuchFileOrDirectory(resultPath.toString());
                 }
 
@@ -131,13 +134,14 @@ public class DirectoryExecutor implements Executor {
             } else {
                 throw new NoSuchFileOrDirectory(resultPath.toString());
             }
-
+            return "";
         } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
             System.out.println(new NoSuchFileOrDirectory(resultPath.toString()));
+            return "";
         }
     }
 
-    private void mkdir(String[] args, String[] currentPath, User excutor) {
+    private String mkdir(String[] args, String[] currentPath, User excutor) {
         // 取所有的args
         if (args.length == 0) {
             try {
@@ -149,24 +153,26 @@ public class DirectoryExecutor implements Executor {
             List<String[]> createPaths = getCombinationPaths(args, currentPath);
             // TODO mkdir path function
         }
+        return "";
     }
 
-    private void rm(String[] args, String[] currentPath, User excutor) {
+    private String rm(String[] args, String[] currentPath, User excutor) {
         // 取所有的args, args.length == 0 或者结合后为当前路径的祖先都跳过
         if (args.length == 0)
-            return;
+            return "";
 
         List<String[]> createPaths = getCombinationPaths(args, currentPath);
         // 过滤祖先文件夹
         List<String[]> filterPaths = filterAncestorPath(createPaths, currentPath);
 
         // TODO rm path function
+        return "";
     }
 
-    private void mv(String[] args, String[] currentPath, User excutor) {
+    private String mv(String[] args, String[] currentPath, User excutor) {
         // 取所有的args 都移动到最后一个 arg, args.length == 0, 1 或者结合后为目标路径的祖先都跳过
         if (args.length <= 1)
-            return;
+            return "";
 
         List<String[]> createPaths = getCombinationPaths(ArrayUtils.subarray(args, 0, args.length - 1), currentPath);
 
@@ -175,18 +181,19 @@ public class DirectoryExecutor implements Executor {
             targetPath = getCombinationPath(args[args.length - 1], currentPath);
         } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
             noSuchFileOrDirectory.printStackTrace();
-            return;
+            return "";
         }
 
         List<String[]> filterPaths = filterAncestorPath(createPaths, targetPath);
 
         // TODO mv path function
+        return "";
     }
 
-    private void cp(String[] args, String[] currentPath, User excutor) {
+    private String cp(String[] args, String[] currentPath, User excutor) {
         // 只用前两个
         if (args.length < 2) {
-            return;
+            return "";
         }
 
         try {
@@ -197,23 +204,23 @@ public class DirectoryExecutor implements Executor {
 
 
             // TODO cp function
-
+            return "";
         } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
-            noSuchFileOrDirectory.printStackTrace();
+            noSuchFileOrDirectory.printStackTrace();return "";
         }
     }
 
-    private void ln(String[] args, String[] currentPath, User excutor) {
+    private String ln(String[] args, String[] currentPath, User excutor) {
         // 只用前两个 或 三个
         if (args.length < 2) {
-            return;
+            return "";
         }
 
         try {
             if (args[0].equals("-s")) {
                 // 符号链接
                 if (args.length < 3) {
-                    return;
+                    return "";
                 }
 
                 String[] sourcePath = getCombinationPath(args[1], currentPath);
@@ -226,8 +233,10 @@ public class DirectoryExecutor implements Executor {
 
             }
             // TODO link function
+            return "";
         } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
             noSuchFileOrDirectory.printStackTrace();
+            return "";
         }
     }
 }

@@ -14,7 +14,7 @@ public class BFD {//i节点表
     private int freeINodes;//空闲可分配的i节点数目
     public static int TOTAL_NUM = GlobalProperties.getInt("INode.totalNum");
     public static int MFD_INDEX = GlobalProperties.getInt("INode.MFDIndex");
-    private ArrayList<Integer> freeINodesIndex;//
+    private ArrayList<Integer> freeINodesIndex = new ArrayList<>();
     private DiskINode[] iNodes;
 
     private static BFD bfd;

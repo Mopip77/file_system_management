@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public interface Executor {
-    void excute(String command, String[] args, String[] currentPath, User excutor);
+    String excute(String command, String[] args, String[] currentPath, User excutor);
 
     default String[] getCombinationPath(String appendPath, String[] currentPath) throws NoSuchFileOrDirectory {
         String[] pathItem = appendPath.split("/");

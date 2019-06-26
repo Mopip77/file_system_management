@@ -13,53 +13,58 @@ public class FileExecutor implements Executor {
 
 
     @Override
-    public void excute(String command, String[] args, String[] currentPath, User excutor) {
+    public String excute(String command, String[] args, String[] currentPath, User excutor) {
         switch (command) {
             case "open":
-                open(args, currentPath, excutor);
-                break;
+                return open(args, currentPath, excutor);
+
             case "close":
-                close(args, currentPath, excutor);
-                break;
+                return close(args, currentPath, excutor);
+
             case "read":
-                read(args, currentPath, excutor);
-                break;
+                return read(args, currentPath, excutor);
+
             case "write":
-                write(args, currentPath, excutor);
-                break;
+                return write(args, currentPath, excutor);
+            default:
+                return null;
+
         }
     }
 
-    private void open(String[] args, String[] currentPath, User excutor) {
+    private String open(String[] args, String[] currentPath, User excutor) {
         // 加载全部args
         List<String[]> combinationPaths = getCombinationPaths(args, currentPath);
 
         // TODO open function
+        return null;
     }
 
-    private void close(String[] args, String[] currentPath, User excutor) {
+    private String close(String[] args, String[] currentPath, User excutor) {
         // 加载全部args
         List<String[]> combinationPaths = getCombinationPaths(args, currentPath);
 
         // TODO close function
+        return null;
     }
 
-    private void read(String[] args, String[] currentPath, User excutor) {
+    private String read(String[] args, String[] currentPath, User excutor) {
         if (args.length <= 0)
-            return;
+            return null;
 
         // 只读第一个
         try {
             String[] path = getCombinationPath(args[0], currentPath);
-
+            return null;
             // TODO read function
 
         } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
             System.out.println(noSuchFileOrDirectory);
+            return null;
         }
     }
 
-    private void write(String[] args, String[] currentPath, User excutor) {
+    private String write(String[] args, String[] currentPath, User excutor) {
 //        if (args.length <= 0)
 //            return;
 //
@@ -72,6 +77,7 @@ public class FileExecutor implements Executor {
 //        } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
 //            System.out.println(noSuchFileOrDirectory);
 //        }
+        return null;
     }
 
 }

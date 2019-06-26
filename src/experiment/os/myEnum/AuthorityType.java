@@ -1,25 +1,28 @@
 package experiment.os.myEnum;
 
 public enum AuthorityType {
-    READ(256),
-    WRITE(128),
-    EXCUTE(64),
+    READ((short)256),
+    WRITE((short)128),
+    EXCUTE((short)64),
 
-    GROUP_READ(32),
-    GROUP_WRITE(16),
-    GROUP_EXCUTE(8),
+    GROUP_READ((short)32),
+    GROUP_WRITE((short)16),
+    GROUP_EXCUTE((short)8),
 
-    OTHER_READ(4),
-    OTHER_WRITE(2),
-    OTHER_EXCUTE(1);
+    OTHER_READ((short)4),
+    OTHER_WRITE((short)2),
+    OTHER_EXCUTE((short)1),
 
-    private Integer mode;
+    FILE_DEFAULT_AUTHORITY((short)436),
+    DIRECTORY_DEFAULT_AUTHORITY((short)509);
 
-    AuthorityType(Integer mode) {
+    private short mode;
+
+    AuthorityType(short mode) {
         this.mode = mode;
     }
 
-    public Integer getMode() {
+    public short getMode() {
         return mode;
     }
 
