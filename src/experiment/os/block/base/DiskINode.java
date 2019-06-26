@@ -2,7 +2,9 @@ package experiment.os.block.base;
 
 import experiment.os.myEnum.FileType;
 
-public class DiskINode {
+import java.io.Serializable;
+
+public class DiskINode implements Serializable {
     private int quoteNum;//引用计数
     private short mode;//存取权限
     private short firstBlock;
@@ -14,7 +16,9 @@ public class DiskINode {
     private long createTime;//文件创建信息
     private long modifyTime;//文件最近修改时间
 
-    public DiskINode(short mode, short firstBlock, FileType fileType, short userId, short groupId) {
+    public DiskINode() { }
+
+    public void initInode(short mode, short firstBlock, FileType fileType, short userId, short groupId) {
         this.mode = mode;
         this.firstBlock = firstBlock;
         this.fileType = fileType.getType();
@@ -28,20 +32,16 @@ public class DiskINode {
         modifyTime = createTime;
     }
 
+    public void incQuote() {
+        this.quoteNum++;
+    }
+
     public int getQuoteNum() {
         return quoteNum;
     }
 
-    public void setQuoteNum(int quoteNum) {
-        this.quoteNum = quoteNum;
-    }
-
     public short getMode() {
         return mode;
-    }
-
-    public void setMode(short mode) {
-        this.mode = mode;
     }
 
     public short getFirstBlock() {
@@ -72,32 +72,16 @@ public class DiskINode {
         return fileType;
     }
 
-    public void setFileType(int fileType) {
-        this.fileType = fileType;
-    }
-
     public short getUserId() {
         return userId;
-    }
-
-    public void setUserId(short userId) {
-        this.userId = userId;
     }
 
     public short getGroupId() {
         return groupId;
     }
 
-    public void setGroupId(short groupId) {
-        this.groupId = groupId;
-    }
-
     public long getCreateTime() {
         return createTime;
-    }
-
-    public void setCreateTime(long createTime) {
-        this.createTime = createTime;
     }
 
     public long getModifyTime() {

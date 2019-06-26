@@ -1,22 +1,61 @@
 package experiment.os.user;
 
 import experiment.os.properties.GlobalProperties;
+import experiment.os.system.SysOpenFile;
+import experiment.os.system.SysOpenFileItem;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class UserOpenFile implements Serializable {
 
-    transient private static int MAX_OPEN_FILE_COUNT = GlobalProperties.getInt("openFile.maxOpenFileCount");
+    // diskInodeIndex, item
+    private Map<Integer, UserOpenFileItem> openFileMap = new HashMap<>();
 
-    private short mode;
-    private short uid;
-    private short gid;
-    private int[] openFileInodeIndexes;
+    public boolean allocate(int diskInodeIndex, String[] path) {
+        if (openFileMap.containsKey(diskInodeIndex)) {
+            // 同一个用户重复打开一个文件
+            return true;
+        }
 
-    public UserOpenFile(short mode, short uid, short gid) {
-        this.mode = mode;
-        this.uid = uid;
-        this.gid = gid;
-        openFileInodeIndexes = new int[MAX_OPEN_FILE_COUNT];
+        int sysOpenFileIndex = SysOpenFile.getInstance().addItem(diskInodeIndex);
+        if (sysOpenFileIndex == -1) {
+            // 不能分配
+            return false;
+        } else {
+            // 新建一个, 或者是另一个用户打开的一个文件
+            openFileMap.put(diskInodeIndex, new UserOpenFileItem(diskInodeIndex, sysOpenFileIndex, path));
+            return true;
+        }
+    }
+
+    public boolean delete(int diskInodeIndex) {
+        UserOpenFileItem removeItem = openFileMap.remove(diskInodeIndex);
+
+        if (removeItem == null) {
+            return true;
+        }
+
+        return SysOpenFile.getInstance().delItem(removeItem.getSysOpenFileOffset());
+    }
+
+    public int getDiskinodeByPath(String[] path) {
+        for (Map.Entry<Integer, UserOpenFileItem> entry : openFileMap.entrySet()) {
+            if (Arrays.equals(entry.getValue().getPath(), path)) {
+                return entry.getKey();
+            }
+        }
+        return -1;
+    }
+
+    public void clear() {
+        Iterator<Map.Entry<Integer, UserOpenFileItem>> iterator = openFileMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            delete(iterator.next().getKey());
+        }
     }
 }

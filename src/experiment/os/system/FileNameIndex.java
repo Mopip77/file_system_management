@@ -48,7 +48,8 @@ public class FileNameIndex {
         for (int i = 0; i < absentPath.length; i++) {
             sb.append("/" + absentPath[i]);
             if (map.containsKey(sb.toString())) {
-                result.add(map.get(sb.toString()));
+                parentInodeIdx = map.get(sb.toString());
+                result.add(parentInodeIdx);
                 continue;
             }
             // 加载上一级目录
@@ -58,7 +59,9 @@ public class FileNameIndex {
             parentInode = BFD.getInstance().get(parentInodeIdx);
             // 途径的path必须是folder
             if (parentInode.getFileType() != FileType.DIRECTORY.getType()) throw new NoSuchFileOrDirectory("FileNameIndex 66");
-            parentDirectory = (Directory) BlockBuffer.getInstance().get(parentInode.getFirstBlock());
+//            parentDirectory = (Directory) BlockBuffer.getInstance().get(parentInode.getFirstBlock());
+            BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(parentInode.getFirstBlock());
+            parentDirectory = (Directory) blockBufferItem.getBlock();
             int idx = parentDirectory.find(absentPath[i]);
             if (idx == -1) {
                 throw new NoSuchFileOrDirectory("FileNameIndex 77");
@@ -67,7 +70,7 @@ public class FileNameIndex {
             result.add(idx);
             parentInodeIdx = idx;
         }
-        return (Integer[]) result.toArray();
+        return result.toArray(new Integer[]{});
     }
 
     /**
@@ -97,7 +100,7 @@ public class FileNameIndex {
             Integer[] each = getEach(path);
             return each[-1];
         } else {
-            Integer[] eachFromPos = getEachFromPos(map.get(sb.toString()), sb.toString(), (String[]) absent.toArray());
+            Integer[] eachFromPos = getEachFromPos(map.get(sb.toString()), sb.toString(), absent.toArray(new String[]{}));
             return eachFromPos[-1];
         }
     }

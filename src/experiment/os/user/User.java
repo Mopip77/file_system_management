@@ -8,8 +8,8 @@ public class User implements Serializable{
     private String password;
     private short uid;
     private short gid;
-    private short defaultFileMode = 664;
-    private short defaultFolderMode = 775;
+    private short defaultFileMode = 436;
+    private short defaultFolderMode = 509;
     private UserOpenFile userOpenFile;
 
     public User(String name, String password, short uid, short gid, short defaultFileMode, short defaultFolderMode) {
@@ -19,11 +19,12 @@ public class User implements Serializable{
         this.gid = gid;
         this.defaultFileMode = defaultFileMode;
         this.defaultFolderMode = defaultFolderMode;
-//        userOpenFile = new UserOpenFile(defaultMode, uid, gid);
+        userOpenFile = new UserOpenFile();
     }
 
     public void logout() {
         // 关闭所有userOpenFile的item
+        userOpenFile.clear();
     }
 
     public String getName() {

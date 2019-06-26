@@ -3,7 +3,7 @@ package experiment.os.block.base;
 import experiment.os.properties.GlobalProperties;
 
 public class File implements Block {
-    static int FILE_TEXT_MAX_LENGTH = GlobalProperties.getInt("block.blockSize") - 2;
+    public static int FILE_TEXT_MAX_LENGTH = GlobalProperties.getInt("block.blockSize") - 2;
 
     private char[] data = new char[FILE_TEXT_MAX_LENGTH];
     private int nextFileIndex;

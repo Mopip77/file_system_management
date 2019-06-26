@@ -8,27 +8,6 @@ import org.apache.commons.lang3.SerializationUtils;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-class BlockBufferItem {
-    private Block block;
-    private boolean modified = false;
-
-    public BlockBufferItem(Block block) {
-        this.block = SerializationUtils.clone(block);
-    }
-
-    public boolean isModified() {
-        return modified;
-    }
-
-    public void setModified(boolean modified) {
-        this.modified = modified;
-    }
-
-    public Block getBlock() {
-        return block;
-    }
-}
-
 public class BlockBuffer {
 
     private int MAX_SIZE = GlobalProperties.getInt("blockBuffer.maxSize");
@@ -48,11 +27,11 @@ public class BlockBuffer {
         return blockBufferInstance;
     }
 
-    public Block get(int diskIndex) {
+    public BlockBufferItem get(int diskIndex) {
         if (blockBuffer.get(diskIndex) == null) {
             loadDiskBlock(diskIndex);
         }
-        return blockBuffer.get(diskIndex).getBlock();
+        return blockBuffer.get(diskIndex);
     }
 
     public void set(int diskIndex, Block block) {

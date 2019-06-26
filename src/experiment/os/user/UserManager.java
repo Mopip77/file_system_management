@@ -27,6 +27,8 @@ public class UserManager implements Serializable {
             currentUid = (short) ois.readObject();
             currentGid = (short) ois.readObject();
             registerUsers = (List<User>) ois.readObject();
+            registerUsers.stream()
+                    .forEach(user -> user.setUserOpenFile(new UserOpenFile()));
         } catch (Exception e) {
 //            registerUsers = new ArrayList<>();
         } finally {
@@ -63,22 +65,6 @@ public class UserManager implements Serializable {
     }
 
     public static User register(String name, String password) {
-//        System.out.println("[Register]");
-//        String name = null;
-//        do {
-//            System.out.print("name: ");
-//            name = scanner.next();
-//        } while (findByName(name) != null);
-//
-//        System.out.print("password: ");
-//        String password = scanner.next();
-//        System.out.println("file_mode[0-7, 8 -> default]: ");
-//        short mode = scanner.nextShort();
-//        // check mode range
-//        if (!(mode >= 0 && mode <= 7)) {
-//            mode = (short) (AuthorityType.READ.getMode() | AuthorityType.WRITE.getMode());
-//        }
-
         if (findByName(name) != null) {
             return null;
         }
@@ -117,17 +103,5 @@ public class UserManager implements Serializable {
                 }
             }
         }
-    }
-
-    public static short getCurrentUid() {
-        return currentUid;
-    }
-
-    public static short getCurrentGid() {
-        return currentGid;
-    }
-
-    public static List<User> getRegisterUsers() {
-        return registerUsers;
     }
 }

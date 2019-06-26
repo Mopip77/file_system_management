@@ -1,7 +1,14 @@
 package experiment.os.command_parser;
 
-import experiment.os.exception.NoSuchFileOrDirectory;
+import experiment.os.Session;
+import experiment.os.block.base.*;
+import experiment.os.exception.*;
+import experiment.os.myEnum.AuthorityType;
+import experiment.os.myEnum.FileType;
+import experiment.os.system.*;
 import experiment.os.user.User;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -11,73 +18,326 @@ public class FileExecutor implements Executor {
     // read xxx
     // write xxx
 
+    private BFD bfd = BFD.getInstance();
+    private StringBuilder sb;
 
     @Override
-    public String excute(String command, String[] args, String[] currentPath, User excutor) {
+    public String excute(String command, String[] args, String[] currentPath, Session session) {
         switch (command) {
+            case "create":
+                return create(args, currentPath, session);
+
             case "open":
-                return open(args, currentPath, excutor);
+                return open(args, currentPath, session);
 
             case "close":
-                return close(args, currentPath, excutor);
+                return close(args, currentPath, session);
 
             case "read":
-                return read(args, currentPath, excutor);
+                return read(args, currentPath, session);
 
             case "write":
-                return write(args, currentPath, excutor);
+                return write(args, currentPath, session);
             default:
                 return null;
 
         }
     }
 
-    private String open(String[] args, String[] currentPath, User excutor) {
+    private String create(String[] args, String[] currentPath, Session session) {
+        User excutor = session.getUser();
+        sb = new StringBuilder();
         // 加载全部args
         List<String[]> combinationPaths = getCombinationPaths(args, currentPath);
 
-        // TODO open function
-        return null;
+        for (String[] path : combinationPaths) {
+            try {
+                if (!MemSuperBlock.getInstance().hasFreeBlock(1))
+                    throw new BlockNotEnough();
+
+                if (!bfd.hasFreeInode(1))
+                    throw new NoFreeINode();
+
+                // 祖先目录
+                Integer[] eachIndex = bfd.getEachIndex(ArrayUtils.subarray(path, 0, path.length - 1));
+                if (!bfd.hasAuthority(eachIndex, excutor, AuthorityType.EXCUTE) ||
+                        !bfd.hasAuthority(new Integer[]{eachIndex[eachIndex.length - 1]}, excutor, AuthorityType.WRITE)) {
+                    sb.append(new PermisionException("create"));
+                    continue;
+                }
+
+                // 父目录
+                DiskINode parentDiskInode = bfd.get(eachIndex[eachIndex.length - 1]);
+                if (parentDiskInode.getFileType() != FileType.DIRECTORY.getType()) {
+                    sb.append(new NoSuchFileOrDirectory(path.toString()));
+                    continue;
+                }
+
+                BlockBufferItem parentBlockBufferItem = BlockBuffer.getInstance().get(parentDiskInode.getFirstBlock());
+                Directory parentDirectory = (Directory) parentBlockBufferItem.getBlock();
+
+                if (parentDirectory.find(path[path.length - 1]) != -1) {
+                    sb.append(new FileOrDirectoryAlreadyExists(path.toString()));
+                    continue;
+                } else if (!parentDirectory.hasFreeItem(1)) {
+                    sb.append(new DirectoryIsFull());
+                    continue;
+                }
+
+                // allocate
+                Integer freeINodeIndex = bfd.getFreeINodeIndex();
+                int[] freeBlocks = MemSuperBlock.getInstance().dispaterBlock(1);
+                BlockBuffer.getInstance().set(freeBlocks[0], new File(new char[]{}, -1));
+                DiskINode diskINode1 = bfd.get(freeINodeIndex);
+                diskINode1.initInode(excutor.getDefaultFileMode(), (short) freeBlocks[0], FileType.FILE, excutor.getUid(), excutor.getGid());
+                parentDirectory.addItem(new DirectoryItem(path[path.length - 1].toCharArray(), freeINodeIndex));
+
+
+            } catch (NoSuchFileOrDirectory | NoFreeINode | DirectoryIsFull | BlockNotEnough p) {
+                sb.append(p + "\n");
+            }
+        }
+        return sb.toString();
     }
 
-    private String close(String[] args, String[] currentPath, User excutor) {
+    private String open(String[] args, String[] currentPath, Session session) {
+        User excutor = session.getUser();
+        StringBuilder localSB = new StringBuilder();
         // 加载全部args
         List<String[]> combinationPaths = getCombinationPaths(args, currentPath);
 
-        // TODO close function
-        return null;
+        for (String[] path : combinationPaths) {
+            try {
+                Integer[] eachIndex = bfd.getEachIndex(path);
+                if (!bfd.hasAuthority(ArrayUtils.subarray(eachIndex, 0, eachIndex.length - 1), excutor, AuthorityType.EXCUTE) ||
+                        !bfd.hasAuthority(new Integer[]{eachIndex[eachIndex.length - 1]}, excutor, AuthorityType.READ)) {
+                    throw new PermisionException("open");
+                }
+
+                DiskINode openingFileDiskInode = bfd.get(eachIndex[eachIndex.length - 1]);
+                if (openingFileDiskInode.getFileType() == FileType.FILE.getType()) {
+                    if (!excutor.getUserOpenFile().allocate(eachIndex[eachIndex.length - 1], path))
+                        localSB.append("open file failure");
+
+                    if (verbosePrint()) localSB.append("open " + StringUtils.join(path, "/") + "\n");
+                } else if (openingFileDiskInode.getFileType() == FileType.SYMBOL_LINK.getType()) {
+                    // get read path
+                    BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(openingFileDiskInode.getFirstBlock());
+                    File file = (File) blockBufferItem.getBlock();
+                    String[] realPath = new String(file.getData()).split("/");
+                    // recursion open
+                    localSB.append(open(realPath, currentPath, session));
+                }
+            } catch (PermisionException | NoSuchFileOrDirectory p) {
+                localSB.append(p + "\n");
+            }
+        }
+        return localSB.toString();
     }
 
-    private String read(String[] args, String[] currentPath, User excutor) {
-        if (args.length <= 0)
-            return null;
+    private String close(String[] args, String[] currentPath, Session session) {
+        User excutor = session.getUser();
+        sb = new StringBuilder();
+        // 加载全部args
+        List<String[]> combinationPaths = getCombinationPaths(args, currentPath);
 
-        // 只读第一个
+        for (String[] path : combinationPaths) {
+            try {
+                int hasOpenFile = excutor.getUserOpenFile().getDiskinodeByPath(path);
+                if (hasOpenFile == -1)
+                    throw new FileAlreadyOpen();
+
+                excutor.getUserOpenFile().delete(hasOpenFile);
+
+            } catch (FileAlreadyOpen p) {
+                sb.append(p + "\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private String read(String[] args, String[] currentPath, Session session) {
+        User excutor = session.getUser();
+        sb = new StringBuilder();
         try {
-            String[] path = getCombinationPath(args[0], currentPath);
-            return null;
-            // TODO read function
+            if (args.length <= 0)
+                throw new CustomException("you should open file before read!");
 
-        } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
-            System.out.println(noSuchFileOrDirectory);
-            return null;
+            // 只读第一个
+            String[] path = getCombinationPath(args[0], currentPath);
+            int openFileDiskInodeIndex = excutor.getUserOpenFile().getDiskinodeByPath(path);
+
+            MemInode memInode = SysOpenFile.getInstance().getMemInodeByDiskInodeIndex(openFileDiskInodeIndex);
+
+            short firstBlock = memInode.getFirstBlock();
+            short lastBlock = memInode.getLastBlock();
+
+            StringBuilder text = new StringBuilder();
+
+            do {
+                BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(firstBlock);
+                File file = (File) blockBufferItem.getBlock();
+
+                if (firstBlock == lastBlock) {
+                    text.append(file.getData(), 0, (int) (memInode.getSize() % File.FILE_TEXT_MAX_LENGTH));
+                } else {
+                    text.append(file.getData());
+                    firstBlock = (short) file.getNextFileIndex();
+                }
+
+            } while (firstBlock != lastBlock);
+
+            sb = text;
+        } catch (CustomException | NoSuchFileOrDirectory p) {
+            sb.append(p);
+        } finally {
+            return sb.toString();
+        }
+
+    }
+
+    private String write(String[] args, String[] currentPath, Session session) {
+        User excutor = session.getUser();
+        sb = new StringBuilder();
+        try {
+            if (args.length <= 2)
+                throw new ProvideNotEnoughParam();
+
+            if (!args[1].equals(">") && !args[1].equals(">>"))
+                throw new CustomException("写格式错误, 必须为 write text >(>) file");
+
+            // write text >> file
+            // 最后一个为打开路径
+            String[] path = getCombinationPath(args[2], currentPath);
+            int openFileDiskInodeIndex = excutor.getUserOpenFile().getDiskinodeByPath(path);
+
+            MemInode memInode = SysOpenFile.getInstance().getMemInodeByDiskInodeIndex(openFileDiskInodeIndex);
+            short firstBlock = memInode.getFirstBlock();
+            short lastBlock = memInode.getLastBlock();
+
+            if (! memInode.hasAuthority(excutor, AuthorityType.WRITE))
+                throw new PermisionException("write");
+
+            // TODO modify modify
+            char[] textChars = args[0].toCharArray();
+            if (args[1].equals(">")) {
+                // rewrite
+                long formerSize = memInode.getSize();
+                long formerBlockSize = (formerSize - 1) / File.FILE_TEXT_MAX_LENGTH + 1;
+                int curBlockSize = (textChars.length - 1) / File.FILE_TEXT_MAX_LENGTH + 1;
+                if (textChars.length >= formerSize) {
+                    // more than before
+
+                    // allocate new block
+                    // maybe fail (not enough)
+                    if (!MemSuperBlock.getInstance().hasFreeBlock((int) (curBlockSize - formerBlockSize))) {
+                        // block not enough
+                        throw new BlockNotEnough();
+                    }
+
+                    // block enough
+                    int[] appendBlocks = MemSuperBlock.getInstance().dispaterBlock((int) (curBlockSize - formerBlockSize));
+                    // link append block
+                    for (int i = 0; i < appendBlocks.length; i++) {
+                        BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(lastBlock);
+                        blockBufferItem.setModified(true);
+                        File lastFileBlock = (File) blockBufferItem.getBlock();
+
+                        lastFileBlock.setNextFileIndex(appendBlocks[i]);
+                        BlockBuffer.getInstance().set(appendBlocks[i], new File(new char[]{}, -1));
+
+                        lastBlock = (short) appendBlocks[i];
+                    }
+                } else {
+                    // less than before
+                    // recall useless block
+                    for (int i = 0; i < formerBlockSize - curBlockSize; i++) {
+                        BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(firstBlock);
+                        File file = (File) blockBufferItem.getBlock();
+                        MemSuperBlock.getInstance().recall((int) firstBlock);
+                        firstBlock = (short) file.getNextFileIndex();
+                    }
+                }
+
+                // rewrite
+                int offset = 0;
+                short firstBlockBack = firstBlock;
+                do {
+                    BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(firstBlock);
+                    blockBufferItem.setModified(true);
+                    File file = (File) blockBufferItem.getBlock();
+
+                    if (firstBlock == lastBlock) {
+                        file.setData(ArrayUtils.subarray(textChars, offset, textChars.length));
+                    } else {
+                        file.setData(ArrayUtils.subarray(textChars, offset, offset + File.FILE_TEXT_MAX_LENGTH));
+                        offset += file.FILE_TEXT_MAX_LENGTH;
+                        firstBlock = (short) file.getNextFileIndex();
+                    }
+                } while (firstBlock != lastBlock);
+
+                memInode.setSize(textChars.length);
+                memInode.setModified(true);
+                memInode.setModifyTime(System.currentTimeMillis());
+                memInode.setFirstBlock(firstBlockBack);
+                memInode.setLastBlock(lastBlock);
+            } else {
+                // append
+                long formerSize = memInode.getSize();
+                long formerBlockSize = (formerSize - 1) / File.FILE_TEXT_MAX_LENGTH + 1;
+                int curBlockSize = (textChars.length - 1) / File.FILE_TEXT_MAX_LENGTH + 1;
+                if (!MemSuperBlock.getInstance().hasFreeBlock((int) (curBlockSize - formerBlockSize))) {
+                    // block not enough
+                    throw new BlockNotEnough();
+                }
+
+                short firstBlockInAppend = lastBlock;
+
+                // block enough
+                int[] appendBlocks = MemSuperBlock.getInstance().dispaterBlock((int) (curBlockSize - formerBlockSize));
+                // link append block
+                for (int i = 0; i < appendBlocks.length; i++) {
+                    BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(lastBlock);
+                    blockBufferItem.setModified(true);
+                    File lastFileBlock = (File) blockBufferItem.getBlock();
+
+                    lastFileBlock.setNextFileIndex(appendBlocks[i]);
+                    BlockBuffer.getInstance().set(appendBlocks[i], new File(new char[]{}, -1));
+
+                    lastBlock = (short) appendBlocks[i];
+                }
+
+                // append write
+                // 把最后一个file块和添加文本拼接
+                BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(firstBlockInAppend);
+                blockBufferItem.setModified(true);
+                File firstBlockInAppendBlock = (File) blockBufferItem.getBlock();
+                char[] appendChars = ArrayUtils.addAll(firstBlockInAppendBlock.getData(), textChars);
+
+                int offset = 0;
+                do {
+                    BlockBufferItem blockBufferItem2 = BlockBuffer.getInstance().get(firstBlockInAppend);
+                    blockBufferItem2.setModified(true);
+                    File file = (File) blockBufferItem2.getBlock();
+
+                    if (firstBlockInAppend == lastBlock) {
+                        file.setData(ArrayUtils.subarray(appendChars, offset, appendChars.length));
+                    } else {
+                        file.setData(ArrayUtils.subarray(appendChars, offset, offset + File.FILE_TEXT_MAX_LENGTH));
+                        offset += file.FILE_TEXT_MAX_LENGTH;
+                        firstBlockInAppend = (short) file.getNextFileIndex();
+                    }
+                } while (firstBlockInAppend != lastBlock);
+
+                memInode.setSize(textChars.length + memInode.getSize());
+                memInode.setModified(true);
+                memInode.setModifyTime(System.currentTimeMillis());
+                memInode.setLastBlock(lastBlock);
+            }
+        } catch (CustomException | NoSuchFileOrDirectory p) {
+            sb.append(p);
+        } finally {
+            return sb.toString();
         }
     }
-
-    private String write(String[] args, String[] currentPath, User excutor) {
-//        if (args.length <= 0)
-//            return;
-//
-//        // 只读第一个
-//        try {
-//            String[] path = getCombinationPath(args[0], currentPath);
-//
-//            // TODO write function
-//
-//        } catch (NoSuchFileOrDirectory noSuchFileOrDirectory) {
-//            System.out.println(noSuchFileOrDirectory);
-//        }
-        return null;
-    }
-
 }

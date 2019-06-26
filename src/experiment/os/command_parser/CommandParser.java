@@ -1,7 +1,7 @@
 package experiment.os.command_parser;
 
+import experiment.os.Session;
 import experiment.os.exception.CommandNotFound;
-import experiment.os.user.User;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -24,7 +24,7 @@ public class CommandParser {
     private static Executor fileExcutor = new FileExecutor();
 
 
-    public static String parse(String queryCommand, String[] currentPath, User excutor) throws Exception {
+    public static String parse(String queryCommand, String[] currentPath, Session session) throws Exception {
         String command;
         String[] args;
         if (StringUtils.isBlank(queryCommand)) {
@@ -41,12 +41,13 @@ public class CommandParser {
             case "mv":
             case "cp":
             case "ln":
-                return directoryExcutor.excute(command, args, currentPath, excutor);
+                return directoryExcutor.excute(command, args, currentPath, session);
+            case "create":
             case "open":
             case "close":
             case "read":
             case "write":
-                return fileExcutor.excute(command, args, currentPath, excutor);
+                return fileExcutor.excute(command, args, currentPath, session);
             default:
                 return "";
         }

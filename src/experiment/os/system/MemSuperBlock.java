@@ -52,6 +52,10 @@ public class MemSuperBlock {
         SuperBlock.getInstance().format();
     }
 
+    public boolean hasFreeBlock(int requireCount) {
+        return freeBlockSize >= requireCount;
+    }
+
     /**
      * 分配指定数量的Block
      * @param requireBlockCount
@@ -88,7 +92,9 @@ public class MemSuperBlock {
         modified = true;
         int loadBlockIndex = freeBlockStack[1];
 
-        LeaderBlock nextLeaderBlock = (LeaderBlock) BlockBuffer.getInstance().get(loadBlockIndex);
+//        LeaderBlock nextLeaderBlock = (LeaderBlock) BlockBuffer.getInstance().get(loadBlockIndex);
+        BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(loadBlockIndex);
+        LeaderBlock nextLeaderBlock = (LeaderBlock) blockBufferItem.getBlock();
         int[] leaderStack = nextLeaderBlock.getStack();
 
         System.arraycopy(leaderStack, 0, freeBlockStack, 0, leaderStack[0] + 1);
@@ -100,7 +106,7 @@ public class MemSuperBlock {
      * 回收多个块
      * @param recallBlockIndex
      */
-    public void recall(int... recallBlockIndex) {
+    public void recall(Integer... recallBlockIndex) {
         modified = true;
 
         freeBlockSize += recallBlockIndex.length;

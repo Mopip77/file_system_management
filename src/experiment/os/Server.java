@@ -1,8 +1,18 @@
 package experiment.os;
 
+import experiment.os.block.DataBlocks;
+import experiment.os.block.SuperBlock;
+import experiment.os.block.base.Block;
+import experiment.os.block.base.Directory;
+import experiment.os.block.base.DirectoryItem;
+import experiment.os.block.base.DiskINode;
 import experiment.os.command_parser.CommandParser;
+import experiment.os.exception.BlockNotEnough;
+import experiment.os.exception.DirectoryIsFull;
+import experiment.os.myEnum.FileType;
 import experiment.os.myEnum.MessageType;
 import experiment.os.properties.GlobalProperties;
+import experiment.os.system.*;
 import experiment.os.user.User;
 import experiment.os.user.UserManager;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -19,6 +29,17 @@ public class Server {
     private static Integer PORT = GlobalProperties.getInt("port");
     private static Selector selector;
     private static final int BUFFER_SIZE = 2048;
+
+    private static Server serverInstance;
+
+    private Server() {}
+
+    public static Server getInstance() {
+        if (serverInstance == null) {
+            serverInstance = new Server();
+        }
+        return serverInstance;
+    }
 
     private Map<Integer, Session> sessionMap = new HashMap<>();
 
@@ -85,8 +106,29 @@ public class Server {
                 register(message, channel);
 
             } else if (messageType.equals(MessageType.NORMAL)) {
-                String result = CommandParser.parse(message, session.getCurrentPathArray(), session.getUser());
+                String result = CommandParser.parse(message, session.getCurrentPathArray(), session);
                 channel.write(jointMessage(MessageType.NORMAL, session, result));
+            } else if (messageType.equals(MessageType.LOGOUT)) {
+                Session logoutSession = sessionMap.remove(channel.socket().getPort());
+                if (logoutSession == null)
+                    return;
+
+                logoutSession.getUser().logout();
+            } else if (messageType.equals(MessageType.EXIT)) {
+
+                for (Session detachSession : sessionMap.values()) {
+                    detachSession.getUser().logout();
+                }
+
+                // 缓存的写回
+                BlockBuffer.getInstance().clear();
+                // disk 写回
+                SuperBlock.getInstance().save();
+                BFD.getInstance().save();
+                DataBlocks.getInstance().save();
+                UserManager.save();
+                // 关闭程序
+                System.exit(0);
             }
 
             channel.register(selector, SelectionKey.OP_READ);
@@ -127,19 +169,19 @@ public class Server {
     private void excute(MessageType messageType, String message, SocketChannel channel) throws IOException {
         if (messageType.equals(MessageType.LOGIN)) {
             login(message, channel);
+
         } else if (messageType.equals(MessageType.REGISTER)) {
             register(message, channel);
+
         } else if (messageType.equals(MessageType.NORMAL)) {
             Session session = sessionMap.get(channel.socket().getPort());
             try {
-                String result = CommandParser.parse(message, session.getCurrentPathArray(), session.getUser());
+                String result = CommandParser.parse(message, session.getCurrentPathArray(), session);
                 channel.write(jointMessage(MessageType.NORMAL, session, result));
             } catch (Exception e) {
                 e.printStackTrace();
                 channel.write(jointMessage(MessageType.NORMAL, session, ""));
             }
-        } else if (messageType.equals(MessageType.LOGOUT)) {
-            // TODO
         }
     }
 
@@ -172,6 +214,13 @@ public class Server {
             return;
         }
 
+        // check enough block and inode
+        if (!MemSuperBlock.getInstance().hasFreeBlock(1) ||
+            !BFD.getInstance().hasFreeInode(1)) {
+            channel.write(jointMessage(MessageType.REGISTER, "Register error, retry!"));
+            return;
+        }
+
         String name = s[0];
         String pwd = s[1];
         User registerUser = UserManager.register(name, pwd);
@@ -180,11 +229,32 @@ public class Server {
             return;
         }
 
+        // allocate inode and directory
+        try {
+            int[] freeBlockIndex = MemSuperBlock.getInstance().dispaterBlock(1);
+            BlockBuffer.getInstance().set(freeBlockIndex[0], new Directory());
+            Integer freeINodeIndex = BFD.getInstance().getFreeINodeIndex();
+            DiskINode diskINode = BFD.getInstance().get(freeINodeIndex);
+            diskINode.initInode(registerUser.getDefaultFolderMode(), (short) freeBlockIndex[0], FileType.DIRECTORY, registerUser.getUid(), registerUser.getGid());
+
+            // add item in MFD
+            DiskINode MFD = BFD.getInstance().get(BFD.MFD_INDEX);
+            BlockBufferItem MFDBBI = BlockBuffer.getInstance().get(MFD.getFirstBlock());
+            MFDBBI.setModified(true);
+            Directory MFDir = (Directory) MFDBBI.getBlock();
+            MFDir.addItem(new DirectoryItem(name.toCharArray(), freeINodeIndex));
+        } catch (BlockNotEnough blockNotEnough) {
+            // 不可能发生
+            blockNotEnough.printStackTrace();
+        } catch (DirectoryIsFull directoryIsFull) {
+            // TODO 避免
+            directoryIsFull.printStackTrace();
+        }
+
         channel.write(jointMessage(MessageType.INITIAL, "Register Success!\nPlease login or register!"));
     }
 
     public static void main(String[] args) throws IOException {
-        Server server = new Server();
-        server.run();
+        Server.getInstance().run();
     }
 }

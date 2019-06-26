@@ -120,13 +120,16 @@ public class Client {
                 command = scanner.nextLine().trim();
             }
 
-            if (command.split(" ")[0].equals("logout")) {
+            // special command
+            String specialCommand = command.split(" ")[0];
+            if (specialCommand.toLowerCase().equals("logout")) {
                 channel.write(jointMessage(MessageType.LOGOUT));
+            } else if (specialCommand.toLowerCase().equals("exit")) {
+                channel.write(jointMessage(MessageType.EXIT));
             } else {
                 channel.write(jointMessage(MessageType.NORMAL, command));
             }
         }
-
         channel.register(selector, SelectionKey.OP_READ);
     }
 
@@ -143,7 +146,7 @@ public class Client {
     private Map.Entry<MessageType, String> getMessage(ByteBuffer buffer) throws IndexOutOfBoundsException {
         buffer.flip();
         MessageType type = MessageType.getByValue(buffer.get(0));
-        String text = new String(buffer.array(), 1, buffer.limit() - 1).trim();
+        String text = new String(buffer.array(), 1, buffer.limit() - 1);
         return new ImmutablePair<>(type, text);
     }
 

@@ -7,7 +7,8 @@ public enum  MessageType {
     REGISTER((byte) 1),
     NORMAL((byte) 2),
     INITIAL((byte) 3),
-    LOGOUT((byte) 4);
+    LOGOUT((byte) 4),
+    EXIT((byte) 5);
 
 
     private byte type;
@@ -37,6 +38,9 @@ public enum  MessageType {
                 break;
             case 4:
                 mode = LOGOUT;
+                break;
+            case 5:
+                mode = EXIT;
                 break;
         }
         return mode;

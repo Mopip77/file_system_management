@@ -2,7 +2,9 @@ package experiment.os.block.base;
 
 import experiment.os.properties.GlobalProperties;
 
-public class DirectoryItem {
+import java.io.Serializable;
+
+public class DirectoryItem implements Serializable {
     private char[] dName = new char[GlobalProperties.getInt("file.nameMaxLength")];
     private int dIno;
 
@@ -18,15 +20,7 @@ public class DirectoryItem {
         return dIno;
     }
 
-    public void setdIno(int dIno) {
-        this.dIno = dIno;
-    }
-
     public char[] getdName() {
         return dName;
-    }
-
-    public void setdName(char[] dName) {
-        this.dName = dName;
     }
 }
