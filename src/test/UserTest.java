@@ -27,4 +27,18 @@ public class UserTest {
             System.out.println(i);
         }
     }
+
+    @Test
+    public void asdf() {
+        char[] mychar = new char[200];
+        char[] chars = "asdf".toCharArray();
+        System.arraycopy(chars, 0, mychar, 0, chars.length);
+        System.out.println(mychar.length);
+        System.out.println(new String(mychar));
+    }
+
+    @Test
+    public void e() {
+        System.out.println((7 << 6) + (7 << 3) + 7);
+    }
 }

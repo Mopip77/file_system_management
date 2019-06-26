@@ -22,6 +22,7 @@ public class CommandParser {
 
     private static Executor directoryExcutor = new DirectoryExecutor();
     private static Executor fileExcutor = new FileExecutor();
+    private static Executor authorityExcutor = new AuthorityExecutor();
 
 
     public static String parse(String queryCommand, String[] currentPath, Session session) throws Exception {
@@ -39,15 +40,17 @@ public class CommandParser {
             case "mkdir":
             case "rm":
             case "mv":
-            case "cp":
             case "ln":
                 return directoryExcutor.excute(command, args, currentPath, session);
-            case "create":
+            case "touch":
             case "open":
             case "close":
-            case "read":
-            case "write":
+            case "cat":
+            case "echo":
                 return fileExcutor.excute(command, args, currentPath, session);
+            case "chgrp":
+            case "chmod":
+                return authorityExcutor.excute(command, args, currentPath, session);
             default:
                 return "";
         }

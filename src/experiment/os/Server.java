@@ -110,10 +110,12 @@ public class Server {
                 channel.write(jointMessage(MessageType.NORMAL, session, result));
             } else if (messageType.equals(MessageType.LOGOUT)) {
                 Session logoutSession = sessionMap.remove(channel.socket().getPort());
-                if (logoutSession == null)
-                    return;
+                if (logoutSession != null)
+                    logoutSession.getUser().logout();
+                channel.write(jointMessage(MessageType.EXIT, "bye!"));
+                channel.close();
+                return;
 
-                logoutSession.getUser().logout();
             } else if (messageType.equals(MessageType.EXIT)) {
 
                 for (Session detachSession : sessionMap.values()) {
@@ -123,7 +125,7 @@ public class Server {
                 // 缓存的写回
                 BlockBuffer.getInstance().clear();
                 // disk 写回
-                SuperBlock.getInstance().save();
+                MemSuperBlock.getInstance().save();
                 BFD.getInstance().save();
                 DataBlocks.getInstance().save();
                 UserManager.save();
@@ -134,6 +136,11 @@ public class Server {
             channel.register(selector, SelectionKey.OP_READ);
         } catch (Exception e) {
             channel.close();
+            // force user logout
+            Session logoutSession = sessionMap.remove(channel.socket().getPort());
+            if (logoutSession != null)
+                logoutSession.getUser().logout();
+
             System.out.println("[diss] " + key);
         }
     }
@@ -189,7 +196,7 @@ public class Server {
         // parse message : name + password
         String[] s = message.split(" ");
         if (s.length < 2) {
-            channel.write(jointMessage(MessageType.LOGIN, "Login error, retry!"));
+            channel.write(jointMessage(MessageType.INITIAL, "Login error, retry!"));
             return;
         }
 
@@ -197,7 +204,7 @@ public class Server {
         String pwd = s[1];
         User loginUser = UserManager.login(name, pwd);
         if (loginUser == null) {
-            channel.write(jointMessage(MessageType.LOGIN, "Login error, retry!"));
+            channel.write(jointMessage(MessageType.INITIAL, "Login error, retry!"));
             return;
         }
 
@@ -210,14 +217,14 @@ public class Server {
         // parse message : name + password
         String[] s = message.split(" ");
         if (s.length < 2) {
-            channel.write(jointMessage(MessageType.REGISTER, "Register error, retry!"));
+            channel.write(jointMessage(MessageType.INITIAL, "Register error, retry!"));
             return;
         }
 
         // check enough block and inode
         if (!MemSuperBlock.getInstance().hasFreeBlock(1) ||
             !BFD.getInstance().hasFreeInode(1)) {
-            channel.write(jointMessage(MessageType.REGISTER, "Register error, retry!"));
+            channel.write(jointMessage(MessageType.INITIAL, "Register error, retry!"));
             return;
         }
 
@@ -225,7 +232,7 @@ public class Server {
         String pwd = s[1];
         User registerUser = UserManager.register(name, pwd);
         if (registerUser == null) {
-            channel.write(jointMessage(MessageType.REGISTER, "Register error, retry!"));
+            channel.write(jointMessage(MessageType.INITIAL, "Register error, retry!"));
             return;
         }
 

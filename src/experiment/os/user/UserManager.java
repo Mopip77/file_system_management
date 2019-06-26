@@ -58,7 +58,7 @@ public class UserManager implements Serializable {
 //            }
 //        }
         User loginUser = findByName(name);
-        if (loginUser.getPassword().equals(pwd)) {
+        if (loginUser != null && loginUser.getPassword().equals(pwd)) {
             return loginUser;
         }
         return null;

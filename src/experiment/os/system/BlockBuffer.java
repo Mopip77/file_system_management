@@ -47,17 +47,10 @@ public class BlockBuffer {
     }
 
     public void clear() {
-        for (int i = 0; i < size; i++) {
+        while (size != 0) {
+            // write back 中会减少size
             writeFirstBlockBack();
         }
-        size = 0;
-    }
-
-    public void save() {
-        for (int i = 0; i < size; i++) {
-            writeFirstBlockBack();
-        }
-        DataBlocks.getInstance().save();
     }
 
     public void setBlockModified(int diskIndex) {
@@ -87,7 +80,7 @@ public class BlockBuffer {
         BlockBufferItem saveBackBlock = blockBuffer.remove(saveBackBlockIndex);
         if (saveBackBlock.isModified()) {
             // write back
-            DataBlocks.getInstance().set(saveBackBlockIndex, saveBackBlock.getBlock());
+            DataBlocks.getInstance().set(saveBackBlockIndex, SerializationUtils.clone(saveBackBlock.getBlock()));
         }
     }
 }

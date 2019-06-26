@@ -1,5 +1,6 @@
 package experiment.os.system;
 
+import experiment.os.block.SuperBlock;
 import experiment.os.block.base.Directory;
 import experiment.os.block.base.DiskINode;
 import experiment.os.exception.NoSuchFileOrDirectory;
@@ -116,11 +117,16 @@ public class FileNameIndex {
         size++;
     }
 
-    public void removeAllDescendant(String basePath) {
-        if (!map.containsKey(basePath))
+    public void removeAllDescendant(String[] basePath) {
+        StringBuilder sb = new StringBuilder();
+        for (String s : basePath) {
+            sb.append("/" + s);
+        }
+
+        if (!map.containsKey(sb.toString()))
             return;
 
-        Set<String> descendants = map.keySet().stream().filter(e -> e.startsWith(basePath)).collect(Collectors.toSet());
+        Set<String> descendants = map.keySet().stream().filter(e -> e.startsWith(sb.toString())).collect(Collectors.toSet());
         for (String descendant : descendants) {
             map.remove(descendant);
             size--;

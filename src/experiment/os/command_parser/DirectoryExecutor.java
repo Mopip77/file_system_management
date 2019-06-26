@@ -1,5 +1,6 @@
 package experiment.os.command_parser;
 
+import com.sun.xml.internal.ws.api.server.EndpointAwareCodec;
 import experiment.os.Server;
 import experiment.os.Session;
 import experiment.os.block.base.*;
@@ -12,6 +13,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
+import java.io.FilenameFilter;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -65,6 +67,11 @@ public class DirectoryExecutor implements Executor {
     private List<String[]> filterAncestorPath(List<String[]> checkPaths, String[] targetPath) {
         List<String[]> result = new ArrayList<>();
         for (String[] checkPath : checkPaths) {
+            if (checkPath.length >= targetPath.length) {
+                result.add(checkPath);
+                continue;
+            }
+
             boolean isAncient = true;
             for (int i = 0; i < checkPath.length; i++) {
                 if (checkPath[i].equals(targetPath[i])) {
@@ -263,6 +270,7 @@ public class DirectoryExecutor implements Executor {
                         parentBBI.setModified(true);
                         Directory parentDir = (Directory) parentBBI.getBlock();
                         DirectoryItem deletedDirectoryItem = parentDir.removeItem(deletePath[deletePath.length - 1]);
+                        FileNameIndex.getInstance().removeAllDescendant(deletePath);
 
                         // delete remove item, free block and inode
                         int deletedInodeIdex = deletedDirectoryItem.getdIno();
@@ -308,6 +316,7 @@ public class DirectoryExecutor implements Executor {
 
                         // 3.打开表删除成功 则释放inode和block
                         DirectoryItem deletedFileItem = parentDir.removeItem(deletePath[deletePath.length - 1]);
+                        FileNameIndex.getInstance().removeAllDescendant(deletePath);
                         freeInodeAndBlockWithoutChecking(deletedFileItem.getdIno());
                     }
                 }
@@ -367,6 +376,7 @@ public class DirectoryExecutor implements Executor {
                 blockBufferItem.setModified(true);
                 Directory parentDir = (Directory) blockBufferItem.getBlock();
                 DirectoryItem removeItem = parentDir.removeItem(createPath[createPath.length - 1]);
+                FileNameIndex.getInstance().removeAllDescendant(createPath);
 
                 targetDir.addItem(removeItem);
             }
@@ -440,7 +450,9 @@ public class DirectoryExecutor implements Executor {
                 // allocate
                 Integer freeINodeIndex = bfd.getFreeINodeIndex();
                 int[] freeBlocks = MemSuperBlock.getInstance().dispaterBlock(1);
-                BlockBuffer.getInstance().set(freeBlocks[0], new File(getAbsolutePath(sourcePath).toCharArray(), -1));
+                File newFile = new File(new char[]{}, -1);
+                newFile.setData(getAbsolutePath(sourcePath).toCharArray());
+                BlockBuffer.getInstance().set(freeBlocks[0], newFile);
                 DiskINode diskINode1 = bfd.get(freeINodeIndex);
                 diskINode1.initInode(excutor.getDefaultFileMode(), (short) freeBlocks[0], FileType.SYMBOL_LINK, excutor.getUid(), excutor.getGid());
                 parentDir.addItem(new DirectoryItem(targetPath[targetPath.length - 1].toCharArray(), freeINodeIndex));

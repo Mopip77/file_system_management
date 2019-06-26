@@ -24,7 +24,7 @@ public class FileExecutor implements Executor {
     @Override
     public String excute(String command, String[] args, String[] currentPath, Session session) {
         switch (command) {
-            case "create":
+            case "touch":
                 return create(args, currentPath, session);
 
             case "open":
@@ -33,10 +33,10 @@ public class FileExecutor implements Executor {
             case "close":
                 return close(args, currentPath, session);
 
-            case "read":
+            case "cat":
                 return read(args, currentPath, session);
 
-            case "write":
+            case "echo":
                 return write(args, currentPath, session);
             default:
                 return null;
@@ -102,7 +102,7 @@ public class FileExecutor implements Executor {
 
     private String open(String[] args, String[] currentPath, Session session) {
         User excutor = session.getUser();
-        StringBuilder localSB = new StringBuilder();
+        sb = new StringBuilder();
         // 加载全部args
         List<String[]> combinationPaths = getCombinationPaths(args, currentPath);
 
@@ -117,22 +117,27 @@ public class FileExecutor implements Executor {
                 DiskINode openingFileDiskInode = bfd.get(eachIndex[eachIndex.length - 1]);
                 if (openingFileDiskInode.getFileType() == FileType.FILE.getType()) {
                     if (!excutor.getUserOpenFile().allocate(eachIndex[eachIndex.length - 1], path))
-                        localSB.append("open file failure");
+                        sb.append("open file failure");
 
-                    if (verbosePrint()) localSB.append("open " + StringUtils.join(path, "/") + "\n");
+                    if (verbosePrint()) sb.append("open " + StringUtils.join(path, "/") + "\n");
                 } else if (openingFileDiskInode.getFileType() == FileType.SYMBOL_LINK.getType()) {
                     // get read path
-                    BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(openingFileDiskInode.getFirstBlock());
-                    File file = (File) blockBufferItem.getBlock();
-                    String[] realPath = new String(file.getData()).split("/");
-                    // recursion open
-                    localSB.append(open(realPath, currentPath, session));
+                    int realPathInodeIndex = getSymbolLinkRealpathDiskInode(eachIndex[eachIndex.length - 1], excutor);
+                    if (realPathInodeIndex == -1) {
+                        // can not find (real path is dir)
+                        throw new CustomException("link file (" + StringUtils.join(path, "/") + " -> " + ") is not exist");
+                    } else {
+                        if (!excutor.getUserOpenFile().allocate(realPathInodeIndex, path))
+                            sb.append("open file failure");
+
+                        if (verbosePrint()) sb.append("open " + StringUtils.join(path, "/") + "\n");
+                    }
                 }
-            } catch (PermisionException | NoSuchFileOrDirectory p) {
-                localSB.append(p + "\n");
+            } catch (PermisionException | NoSuchFileOrDirectory | CustomException p) {
+                sb.append(p + "\n");
             }
         }
-        return localSB.toString();
+        return sb.toString();
     }
 
     private String close(String[] args, String[] currentPath, Session session) {
@@ -165,9 +170,30 @@ public class FileExecutor implements Executor {
 
             // 只读第一个
             String[] path = getCombinationPath(args[0], currentPath);
+            // 先用名字在系统打开表找一下
             int openFileDiskInodeIndex = excutor.getUserOpenFile().getDiskinodeByPath(path);
+            if (openFileDiskInodeIndex == -1) {
+                // 找不到, 可能没有或者是符号链接文件
+                Integer[] eachIndex = bfd.getEachIndex(path);
+                if (!bfd.hasAuthority(ArrayUtils.subarray(eachIndex, 0, eachIndex.length - 1), excutor, AuthorityType.EXCUTE) ||
+                        !bfd.hasAuthority(ArrayUtils.subarray(eachIndex, eachIndex.length - 1, eachIndex.length), excutor, AuthorityType.READ))
+                    throw new PermisionException("read");
+
+                if (bfd.get(eachIndex[eachIndex.length - 1]).getFileType() != FileType.SYMBOL_LINK.getType())
+                    throw new CustomException("this is not a open file");
+
+                int realpathDiskInode = getSymbolLinkRealpathDiskInode(eachIndex[eachIndex.length - 1], excutor);
+                if (realpathDiskInode == -1) {
+                    throw new CustomException("link file (" + StringUtils.join(path, "/") + " -> " + ") is not exist");
+                } else {
+                    openFileDiskInodeIndex = realpathDiskInode;
+                }
+            }
 
             MemInode memInode = SysOpenFile.getInstance().getMemInodeByDiskInodeIndex(openFileDiskInodeIndex);
+            if (memInode == null) {
+                throw new CustomException("this is not a open file");
+            }
 
             short firstBlock = memInode.getFirstBlock();
             short lastBlock = memInode.getLastBlock();
@@ -188,7 +214,7 @@ public class FileExecutor implements Executor {
             } while (firstBlock != lastBlock);
 
             sb = text;
-        } catch (CustomException | NoSuchFileOrDirectory p) {
+        } catch (CustomException | NoSuchFileOrDirectory | PermisionException p) {
             sb.append(p);
         } finally {
             return sb.toString();
@@ -209,9 +235,31 @@ public class FileExecutor implements Executor {
             // write text >> file
             // 最后一个为打开路径
             String[] path = getCombinationPath(args[2], currentPath);
+            // 先用名字在系统打开表找一下
             int openFileDiskInodeIndex = excutor.getUserOpenFile().getDiskinodeByPath(path);
+            if (openFileDiskInodeIndex == -1) {
+                // 找不到, 可能没有或者是符号链接文件
+                Integer[] eachIndex = bfd.getEachIndex(path);
+                if (!bfd.hasAuthority(ArrayUtils.subarray(eachIndex, 0, eachIndex.length - 1), excutor, AuthorityType.EXCUTE) ||
+                        !bfd.hasAuthority(ArrayUtils.subarray(eachIndex, eachIndex.length - 1, eachIndex.length), excutor, AuthorityType.READ))
+                    throw new PermisionException("write");
+
+                if (bfd.get(eachIndex[eachIndex.length - 1]).getFileType() != FileType.SYMBOL_LINK.getType())
+                    throw new CustomException("this is not a open file");
+
+                int realpathDiskInode = getSymbolLinkRealpathDiskInode(eachIndex[eachIndex.length - 1], excutor);
+                if (realpathDiskInode == -1) {
+                    throw new CustomException("link file (" + StringUtils.join(path, "/") + " -> " + ") is not exist");
+                } else {
+                    openFileDiskInodeIndex = realpathDiskInode;
+                }
+            }
 
             MemInode memInode = SysOpenFile.getInstance().getMemInodeByDiskInodeIndex(openFileDiskInodeIndex);
+            if (memInode == null) {
+                throw new CustomException("this is not a open file");
+            }
+
             short firstBlock = memInode.getFirstBlock();
             short lastBlock = memInode.getLastBlock();
 
@@ -334,7 +382,7 @@ public class FileExecutor implements Executor {
                 memInode.setModifyTime(System.currentTimeMillis());
                 memInode.setLastBlock(lastBlock);
             }
-        } catch (CustomException | NoSuchFileOrDirectory p) {
+        } catch (CustomException | NoSuchFileOrDirectory | PermisionException p) {
             sb.append(p);
         } finally {
             return sb.toString();

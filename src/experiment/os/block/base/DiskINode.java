@@ -40,6 +40,10 @@ public class DiskINode implements Serializable {
         return quoteNum;
     }
 
+    public void setMode(short mode) {
+        this.mode = mode;
+    }
+
     public short getMode() {
         return mode;
     }

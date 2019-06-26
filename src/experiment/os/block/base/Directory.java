@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 public class Directory implements Block {
     private static int MAX_SIZE = GlobalProperties.getInt("directory.maxItemPerDirectory");
     private DirectoryItem[] directoryItems = new DirectoryItem[MAX_SIZE];
-    private int size;
+    private int size = 0;
 
     public Directory() {
     }

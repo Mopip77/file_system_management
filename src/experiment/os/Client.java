@@ -97,6 +97,11 @@ public class Client {
         MessageType messageType = data.getKey();
         System.out.print(data.getValue());
 
+        //
+        if (messageType.equals(MessageType.EXIT)) {
+            System.exit(0);
+        }
+
         if (messageType.equals(MessageType.LOGIN)) {
             System.out.print("Username: ");
             String name = scanner.nextLine();
@@ -123,9 +128,11 @@ public class Client {
             // special command
             String specialCommand = command.split(" ")[0];
             if (specialCommand.toLowerCase().equals("logout")) {
-                channel.write(jointMessage(MessageType.LOGOUT));
+                channel.write(jointMessage(MessageType.LOGOUT, command));
+//                channel.close();
+//                return;
             } else if (specialCommand.toLowerCase().equals("exit")) {
-                channel.write(jointMessage(MessageType.EXIT));
+                channel.write(jointMessage(MessageType.EXIT, command));
             } else {
                 channel.write(jointMessage(MessageType.NORMAL, command));
             }
