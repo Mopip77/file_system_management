@@ -24,7 +24,6 @@ public class DiskINode implements Serializable {
         this.fileType = fileType.getType();
         this.userId = userId;
         this.groupId = groupId;
-
         quoteNum = 1;
         lastBlock = firstBlock;
         size = 0;
@@ -34,6 +33,10 @@ public class DiskINode implements Serializable {
 
     public void incQuote() {
         this.quoteNum++;
+    }
+
+    public boolean decQuote() {
+        return --this.quoteNum == 0;
     }
 
     public int getQuoteNum() {

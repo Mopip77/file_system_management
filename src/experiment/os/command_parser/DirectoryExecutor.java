@@ -137,7 +137,7 @@ public class DirectoryExecutor implements Executor {
             if (flag) {
                 if ((bfd.get(eachFolderINodeIndex[eachFolderINodeIndex.length - 1]).getFileType() & FileType.DIRECTORY.getType()) == 0 ||
                         !bfd.hasAuthority(new Integer[]{eachFolderINodeIndex[eachFolderINodeIndex.length - 1]}, excutor, AuthorityType.READ)) {
-                    throw new NoSuchFileOrDirectory(resultPath.toString());
+                    throw new PermisionException(resultPath.toString());
                 }
 
                 // print folder in path
@@ -282,7 +282,7 @@ public class DirectoryExecutor implements Executor {
                     // untraveled file or directory
                     Integer[] eachIndex = bfd.getEachIndex(deletePath);
                     if (!bfd.hasAuthority(ArrayUtils.subarray(eachIndex, 0, eachIndex.length - 1), excutor, AuthorityType.EXCUTE) ||
-                            !bfd.hasAuthority(new Integer[]{eachIndex[eachIndex.length - 1]}, excutor, AuthorityType.WRITE)) {
+                            !bfd.hasAuthority(new Integer[]{eachIndex[eachIndex.length - 2]}, excutor, AuthorityType.WRITE)) {
                         throw new PermisionException("rm");
                     }
 
@@ -313,6 +313,16 @@ public class DirectoryExecutor implements Executor {
                         // 2.用文件的inode尝试先在打开表中删除
                         if (! excutor.getUserOpenFile().delete(eachIndex[eachIndex.length - 1]))
                             throw new CustomException("其他用户正打开文件, 无法删除");
+
+                        // 查看连接数
+                        DiskINode targetDiskInode = bfd.get(eachIndex[eachIndex.length - 1]);
+                        if (! targetDiskInode.decQuote()) {
+                            System.out.println("文件链接数不为0, 不删除");
+                            parentDir.removeItem(deletePath[deletePath.length - 1]);
+                            FileNameIndex.getInstance().removeAllDescendant(deletePath);
+                            continue;
+                        }
+
 
                         // 3.打开表删除成功 则释放inode和block
                         DirectoryItem deletedFileItem = parentDir.removeItem(deletePath[deletePath.length - 1]);
@@ -433,6 +443,7 @@ public class DirectoryExecutor implements Executor {
             // the last one not exist
             DiskINode parentInode = bfd.get(targetEachIndex[targetEachIndex.length - 1]);
             BlockBufferItem blockBufferItem = BlockBuffer.getInstance().get(parentInode.getFirstBlock());
+            blockBufferItem.setModified(true);
             Directory parentDir = (Directory) blockBufferItem.getBlock();
 
             // target path should not exist

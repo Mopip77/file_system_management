@@ -1,9 +1,12 @@
 package experiment.os.user;
 
 import experiment.os.properties.GlobalProperties;
+import experiment.os.system.BFD;
 import experiment.os.system.SysOpenFile;
 import experiment.os.system.SysOpenFileItem;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -18,7 +21,20 @@ public class UserOpenFile implements Serializable {
 
     public boolean allocate(int diskInodeIndex, String[] path) {
         if (openFileMap.containsKey(diskInodeIndex)) {
-            // 同一个用户重复打开一个文件
+            // 同一个用户重复打开一个文件 (有可能是硬链接)
+//            UserOpenFileItem userOpenFileItem = openFileMap.get(diskInodeIndex);
+//            String[] path1 = userOpenFileItem.getPath();
+//            if (path.length == path1.length) {
+//                boolean flag = true;
+//                for (int i = 0; i < path.length; i++) {
+//                    if (!path[i].equals(path1[i])) {
+//                        flag = false;
+//                        break;
+//                    }
+//                }
+//            } else {
+//                openFileMap.put(diskInodeIndex, )
+//            }
             return true;
         }
 

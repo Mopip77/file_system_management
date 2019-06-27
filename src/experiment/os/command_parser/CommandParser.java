@@ -50,6 +50,7 @@ public class CommandParser {
                 return fileExcutor.excute(command, args, currentPath, session);
             case "chgrp":
             case "chmod":
+            case "stat":
                 return authorityExcutor.excute(command, args, currentPath, session);
             default:
                 return "";

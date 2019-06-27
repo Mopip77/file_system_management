@@ -74,6 +74,7 @@ public class FileExecutor implements Executor {
                 }
 
                 BlockBufferItem parentBlockBufferItem = BlockBuffer.getInstance().get(parentDiskInode.getFirstBlock());
+                parentBlockBufferItem.setModified(true);
                 Directory parentDirectory = (Directory) parentBlockBufferItem.getBlock();
 
                 if (parentDirectory.find(path[path.length - 1]) != -1) {
@@ -179,13 +180,23 @@ public class FileExecutor implements Executor {
                         !bfd.hasAuthority(ArrayUtils.subarray(eachIndex, eachIndex.length - 1, eachIndex.length), excutor, AuthorityType.READ))
                     throw new PermisionException("read");
 
-                if (bfd.get(eachIndex[eachIndex.length - 1]).getFileType() != FileType.SYMBOL_LINK.getType())
-                    throw new CustomException("this is not a open file");
+//                if (! (bfd.get(eachIndex[eachIndex.length - 1]).getFileType() == FileType.SYMBOL_LINK.getType() ||
+//                        bfd.get(eachIndex[eachIndex.length - 1]).getFileType() == FileType.FILE.getType()))
+//                    throw new CustomException("this is not a open file");
+
+                if (bfd.get(eachIndex[eachIndex.length - 1]).getFileType() != FileType.SYMBOL_LINK.getType()) {
+                    if (!excutor.getUserOpenFile().allocate(eachIndex[eachIndex.length - 1], path))
+                        throw new CustomException("this is not a open file");
+                }
 
                 int realpathDiskInode = getSymbolLinkRealpathDiskInode(eachIndex[eachIndex.length - 1], excutor);
                 if (realpathDiskInode == -1) {
                     throw new CustomException("link file (" + StringUtils.join(path, "/") + " -> " + ") is not exist");
                 } else {
+                    DiskINode targetDiskInode = bfd.get(realpathDiskInode);
+                    if (targetDiskInode.getQuoteNum() <= 0) {
+                        throw new CustomException("link file (" + StringUtils.join(path, "/") + " -> " + ") is not exist");
+                    }
                     openFileDiskInodeIndex = realpathDiskInode;
                 }
             }
@@ -208,10 +219,9 @@ public class FileExecutor implements Executor {
                     text.append(file.getData(), 0, (int) (memInode.getSize() % File.FILE_TEXT_MAX_LENGTH));
                 } else {
                     text.append(file.getData());
-                    firstBlock = (short) file.getNextFileIndex();
                 }
-
-            } while (firstBlock != lastBlock);
+                firstBlock = (short) file.getNextFileIndex();
+            } while (firstBlock != -1);
 
             sb = text;
         } catch (CustomException | NoSuchFileOrDirectory | PermisionException p) {
@@ -241,11 +251,15 @@ public class FileExecutor implements Executor {
                 // 找不到, 可能没有或者是符号链接文件
                 Integer[] eachIndex = bfd.getEachIndex(path);
                 if (!bfd.hasAuthority(ArrayUtils.subarray(eachIndex, 0, eachIndex.length - 1), excutor, AuthorityType.EXCUTE) ||
-                        !bfd.hasAuthority(ArrayUtils.subarray(eachIndex, eachIndex.length - 1, eachIndex.length), excutor, AuthorityType.READ))
+                        !bfd.hasAuthority(ArrayUtils.subarray(eachIndex, eachIndex.length - 1, eachIndex.length), excutor, AuthorityType.WRITE))
                     throw new PermisionException("write");
 
                 if (bfd.get(eachIndex[eachIndex.length - 1]).getFileType() != FileType.SYMBOL_LINK.getType())
                     throw new CustomException("this is not a open file");
+
+//                if (! (bfd.get(eachIndex[eachIndex.length - 1]).getFileType() == FileType.SYMBOL_LINK.getType() ||
+//                        bfd.get(eachIndex[eachIndex.length - 1]).getFileType() == FileType.FILE.getType()))
+//                    throw new CustomException("this is not a open file");
 
                 int realpathDiskInode = getSymbolLinkRealpathDiskInode(eachIndex[eachIndex.length - 1], excutor);
                 if (realpathDiskInode == -1) {
@@ -320,9 +334,9 @@ public class FileExecutor implements Executor {
                     } else {
                         file.setData(ArrayUtils.subarray(textChars, offset, offset + File.FILE_TEXT_MAX_LENGTH));
                         offset += file.FILE_TEXT_MAX_LENGTH;
-                        firstBlock = (short) file.getNextFileIndex();
                     }
-                } while (firstBlock != lastBlock);
+                    firstBlock = (short) file.getNextFileIndex();
+                } while (firstBlock != -1);
 
                 memInode.setSize(textChars.length);
                 memInode.setModified(true);
@@ -333,7 +347,7 @@ public class FileExecutor implements Executor {
                 // append
                 long formerSize = memInode.getSize();
                 long formerBlockSize = (formerSize - 1) / File.FILE_TEXT_MAX_LENGTH + 1;
-                int curBlockSize = (textChars.length - 1) / File.FILE_TEXT_MAX_LENGTH + 1;
+                int curBlockSize = (int) ((textChars.length + formerSize - 1) / File.FILE_TEXT_MAX_LENGTH + 1);
                 if (!MemSuperBlock.getInstance().hasFreeBlock((int) (curBlockSize - formerBlockSize))) {
                     // block not enough
                     throw new BlockNotEnough();
@@ -373,9 +387,9 @@ public class FileExecutor implements Executor {
                     } else {
                         file.setData(ArrayUtils.subarray(appendChars, offset, offset + File.FILE_TEXT_MAX_LENGTH));
                         offset += file.FILE_TEXT_MAX_LENGTH;
-                        firstBlockInAppend = (short) file.getNextFileIndex();
                     }
-                } while (firstBlockInAppend != lastBlock);
+                    firstBlockInAppend = (short) file.getNextFileIndex();
+                } while (firstBlockInAppend != -1);
 
                 memInode.setSize(textChars.length + memInode.getSize());
                 memInode.setModified(true);
